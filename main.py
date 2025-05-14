@@ -260,10 +260,20 @@ with tabs[0]:
     
     col1, col2 = st.columns([2, 1])
     
-    with col1:
+    # En la sección de tabs[0], reemplaza el bloque del mapa con plotly por este código:
+
+with col1:
+    # Verificar que existan datos para el mapa
+    if len(filtered_data) > 0 and 'latitude' in filtered_data.columns and 'longitude' in filtered_data.columns:
+        # Limitar la muestra para rendimiento y asegurar tipos de datos correctos
+        map_data = filtered_data.sample(min(len(filtered_data), 1000)).copy()
+        map_data['latitude'] = map_data['latitude'].astype(float)
+        map_data['longitude'] = map_data['longitude'].astype(float)
+        map_data['price'] = map_data['price'].astype(float)
+        
         # Mapa con plotly
         fig = px.scatter_mapbox(
-            filtered_data.sample(min(len(filtered_data), 1000)),  # Limitamos a 1000 puntos para rendimiento
+            map_data,
             lat="latitude",
             lon="longitude",
             color="price",
@@ -281,6 +291,8 @@ with tabs[0]:
             height=500
         )
         st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("No hay suficientes datos con coordenadas para mostrar el mapa.")
     
     with col2:
         st.markdown('<div class="section-header">Distribución por Vecindario</div>', unsafe_allow_html=True)

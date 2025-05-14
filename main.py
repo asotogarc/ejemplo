@@ -500,46 +500,7 @@ with tabs[1]:
         
         
         
-        st.markdown('<div class="section-header">Importancia de Características</div>', unsafe_allow_html=True)
-        st.markdown("""
-        <div class="importance-box">
-        <h3>Ranking de características por importancia (Gain):</h3>
-        <ul>
-            <li><b>property_type</b>: 78926.31 (Normalizado: 28.96%)</li>
-            <li><b>room_type</b>: 34114.39 (Normalizado: 12.52%)</li>
-            <li><b>accommodates</b>: 18599.50 (Normalizado: 6.83%)</li>
-            <li><b>distance_to_center</b>: 18420.12 (Normalizado: 6.76%)</li>
-            <li><b>total_amenities</b>: 17949.60 (Normalizado: 6.59%)</li>
-            <li><b>scaled_log_distance</b>: 15124.26 (Normalizado: 5.55%)</li>
-            <li><b>minimum_nights</b>: 13345.00 (Normalizado: 4.90%)</li>
-            <li><b>maximum_nights</b>: 9672.04 (Normalizado: 3.55%)</li>
-            <li><b>neighborhood_cluster</b>: 8574.30 (Normalizado: 3.15%)</li>
-            <li><b>ciudad</b>: 6455.99 (Normalizado: 2.37%)</li>
-            <li><b>log_accommodates</b>: 5992.53 (Normalizado: 2.20%)</li>
-            <li><b>scaled_distance_to_center</b>: 5727.14 (Normalizado: 2.10%)</li>
-            <li><b>scaled_total_amenities</b>: 5582.59 (Normalizado: 2.05%)</li>
-            <li><b>log_distance</b>: 5135.69 (Normalizado: 1.88%)</li>
-            <li><b>log_minimum_nights</b>: 4305.02 (Normalizado: 1.58%)</li>
-            <li><b>essential_score</b>: 4167.03 (Normalizado: 1.53%)</li>
-            <li><b>bathroom_per_person</b>: 2884.72 (Normalizado: 1.06%)</li>
-            <li><b>log_maximum_nights</b>: 2685.00 (Normalizado: 0.99%)</li>
-            <li><b>bathrooms</b>: 1846.04 (Normalizado: 0.68%)</li>
-            <li><b>accommodates_squared</b>: 1767.03 (Normalizado: 0.65%)</li>
-            <li><b>bedrooms</b>: 1722.41 (Normalizado: 0.63%)</li>
-            <li><b>bed_bath_product</b>: 1719.05 (Normalizado: 0.63%)</li>
-            <li><b>bed_to_bedroom_ratio</b>: 1437.47 (Normalizado: 0.53%)</li>
-            <li><b>luxury_score</b>: 1251.96 (Normalizado: 0.46%)</li>
-            <li><b>person_per_bed</b>: 1096.63 (Normalizado: 0.40%)</li>
-            <li><b>person_per_bedroom</b>: 1091.58 (Normalizado: 0.40%)</li>
-            <li><b>bed_accom_ratio</b>: 958.30 (Normalizado: 0.35%)</li>
-            <li><b>beds</b>: 695.56 (Normalizado: 0.26%)</li>
-            <li><b>distance_to_center_squared</b>: 440.89 (Normalizado: 0.16%)</li>
-            <li><b>bedrooms_squared</b>: 412.67 (Normalizado: 0.15%)</li>
-            <li><b>bathrooms_squared</b>: 266.47 (Normalizado: 0.10%)</li>
-            <li><b>beds_squared</b>: 130.00 (Normalizado: 0.05%)</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
+
 
 # Pestaña 3: Características del Alojamiento
 with tabs[2]:

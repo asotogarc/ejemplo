@@ -966,8 +966,8 @@ with tabs[3]:
             plot_data = filtered_data.dropna(subset=["host_listings_count", "price"]).copy()
             if len(plot_data) > 0:
                 try:
-                    # Limitar número de listados a un máximo razonable (por ejemplo, 20)
-                    plot_data["host_listings_count"] = plot_data["host_listings_count"].clip(upper=20)
+                    # Limitar número de listados a un máximo razonable (por ejemplo, 10)
+                    plot_data["host_listings_count"] = plot_data["host_listings_count"].clip(upper=10)
                     # Filtrar valores con suficientes datos (mínimo 5 puntos)
                     min_points = 5
                     category_counts = plot_data["host_listings_count"].value_counts()
@@ -975,55 +975,45 @@ with tabs[3]:
                     plot_data_filtered = plot_data[plot_data["host_listings_count"].isin(valid_listings)]
                     
                     if len(plot_data_filtered) > 0 and len(valid_listings) > 0:
-                        # Calcular mediana y cuartiles por número de listados
-                        stats_data = plot_data_filtered.groupby("host_listings_count")["price"].agg(
-                            median="median",
-                            q25=lambda x: x.quantile(0.25),
-                            q75=lambda x: x.quantile(0.75)
-                        ).reindex(valid_listings)
-                        # Crear gráfico de líneas con bandas
+                        # Calcular mediana de precios y conteo por número de listados
+                        tile_data = plot_data_filtered.groupby("host_listings_count").agg(
+                            median_price=("price", "median"),
+                            count=("price", "count")
+                        ).reset_index()
+                        # Normalizar valores para colores y tamaños
+                        tile_data["color_value"] = tile_data["median_price"] / tile_data["median_price"].max()
+                        tile_data["size"] = np.sqrt(tile_data["count"] / tile_data["count"].max()) * 100  # Escala proporcional
+                        # Crear gráfico de mosaico
                         fig = go.Figure()
-                        # Banda de confianza (IQR)
-                        fig.add_trace(
-                            go.Scatter(
-                                x=stats_data.index,
-                                y=stats_data["q75"],
-                                mode="lines",
-                                line=dict(width=0),
-                                showlegend=False,
-                                fill=None
+                        for i, row in tile_data.iterrows():
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=[row["host_listings_count"]],
+                                    y=[1],  # Fila única para mosaico
+                                    mode="markers+text",
+                                    marker=dict(
+                                        size=row["size"],
+                                        color=row["median_price"],
+                                        colorscale=[[0, "#00A699"], [1, "#FF5A5F"]],
+                                        showscale=True,
+                                        colorbar=dict(title="Precio Mediano (€)"),
+                                        opacity=0.9,
+                                        line=dict(width=1, color="#FFFFFF")
+                                    ),
+                                    text=f"€{row['median_price']:.0f}<br>{int(row['count'])}",
+                                    textposition="middle center",
+                                    textfont=dict(color="white", size=12),
+                                    hoverinfo="text",
+                                    hovertext=f"{int(row['host_listings_count'])} listados: €{row['median_price']:.0f}, {int(row['count'])} alojamientos",
+                                    showlegend=False
+                                )
                             )
-                        )
-                        fig.add_trace(
-                            go.Scatter(
-                                x=stats_data.index,
-                                y=stats_data["q25"],
-                                mode="lines",
-                                line=dict(width=0),
-                                fill="tonexty",
-                                fillcolor="rgba(255, 90, 95, 0.2)",
-                                showlegend=False
-                            )
-                        )
-                        # Línea de mediana
-                        fig.add_trace(
-                            go.Scatter(
-                                x=stats_data.index,
-                                y=stats_data["median"],
-                                mode="lines+markers",
-                                line=dict(color="#FF5A5F", width=3),
-                                marker=dict(size=8, color="#FF5A5F"),
-                                name="Mediana de Precio"
-                            )
-                        )
                         # Actualizar diseño
                         fig.update_layout(
                             xaxis_title="Número de Listados",
-                            yaxis_title="Precio (€)",
-                            title=dict(text="Tendencia de Precios por Número de Listados", font=dict(color="white"), x=0.5),
-                            xaxis=dict(tickmode="linear", dtick=1),
-                            yaxis=dict(range=[0, stats_data["q75"].max() * 1.1]),
-                            showlegend=True,
+                            yaxis=dict(showticklabels=False, showgrid=False, zeroline=False, range=[0.5, 1.5]),
+                            title=dict(text="Precios por Número de Listados", font=dict(color="white"), x=0.5),
+                            xaxis=dict(tickmode="linear", dtick=1, range=[min(valid_listings)-0.5, max(valid_listings)+0.5]),
                             height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
@@ -1031,10 +1021,11 @@ with tabs[3]:
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     else:
-                        st.warning("No hay valores de número de listados con suficientes datos para mostrar el gráfico.")
+                        st.warning("No hay valores de número de listados con suficientes datos (mínimo 5 puntos por categoría).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de líneas: {e}")
-                    st.write("Valores únicos en 'host_listings_count':", plot_data["host_listings_count"].unique())
+                    st.error(f"Error al generar el gráfico de mosaico: {str(e)}")
+                    st.write("Estadísticas de 'host_listings_count':", plot_data["host_listings_count"].describe())
+                    st.write("Estadísticas de 'price':", plot_data["price"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:

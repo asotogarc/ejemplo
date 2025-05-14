@@ -417,36 +417,7 @@ with tabs[1]:
         fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-with tabs[2]:
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<div class="section-header">Capacidad vs. Precio</div>', unsafe_allow_html=True)
-        fig = px.scatter(
-            filtered_data,
-            x="accommodates",
-            y="price",
-            color="room_type",
-            size="review_scores_rating",
-            hover_name="name",
-            hover_data=["bedrooms", "bathrooms", "price"],
-            opacity=0.7,
-            title=""
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=sorted(filtered_data["accommodates"].unique()),
-                y=[filtered_data[filtered_data["accommodates"]==accom]["price"].median() for accom in sorted(filtered_data["accommodates"].unique())],
-                mode="lines+markers",
-                name="Precio Mediano",
-                line=dict(color="red", width=2, dash="dot")
-            )
-        )
-        fig.update_layout(
-            xaxis_title="Capacidad (personas)",
-            yaxis_title="Precio (€)",
-            height=450
-        )
-        st.plotly_chart(fig, use_container_width=True)
+
 
     with col2:
         st.markdown('<div class="section-header">Relación Dormitorios/Baños vs. Precio</div>', unsafe_allow_html=True)

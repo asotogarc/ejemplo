@@ -491,11 +491,11 @@ with tabs[1]:
         
         
 
-        if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
+       if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["room_type", "price"]).copy()
             if len(plot_data) > 0:
                 # Obtener categorías válidas después de filtrar
-                min_points = 1
+                min_points = 1  # Mínimo número de puntos por categoría
                 category_counts = plot_data["room_type"].value_counts()
                 valid_categories = category_counts[category_counts >= min_points].index.tolist()
                 if valid_categories:

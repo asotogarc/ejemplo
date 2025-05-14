@@ -906,35 +906,68 @@ with tabs[3]:
         
 
         if "host_listings_count" in filtered_data.columns and "price" in filtered_data.columns:
-            plot_data = filtered_data.dropna(subset=["host_listings_count", "price"]).sample(min(1000, len(filtered_data)))
+            plot_data = filtered_data.dropna(subset=["host_listings_count", "price"]).copy()
             if len(plot_data) > 0:
-                fig = px.scatter(
-                    plot_data,
-                    x="host_listings_count",
-                    y="price",
-                    labels={"x": "Número de Listados", "y": "Precio (€)"},
-                    title="Relación entre Número de Listados y Precio"
-                )
-                fig.update_layout(title=dict(text="Relación entre Número de Listados y Precio", font=dict(color="white"), x=0.5))
-                st.plotly_chart(fig, use_container_width=True)
+                # Limitar número de listados a un máximo razonable (por ejemplo, 20) y agrupar valores mayores
+                plot_data["host_listings_count"] = plot_data["host_listings_count"].clip(upper=20)
+                # Filtrar valores con suficientes datos (mínimo 5 puntos)
+                min_points = 5
+                category_counts = plot_data["host_listings_count"].value_counts()
+                valid_listings = category_counts[category_counts >= min_points].index.tolist()
+                plot_data_filtered = plot_data[plot_data["host_listings_count"].isin(valid_listings)]
+                
+                if len(plot_data_filtered) > 0 and len(valid_listings) > 0:
+                    try:
+                        # Crear gráfico de violín
+                        fig = px.violin(
+                            plot_data_filtered,
+                            x="host_listings_count",
+                            y="price",
+                            box=True,  # Mostrar caja dentro del violín
+                            points=False,  # No mostrar puntos individuales
+                            labels={"host_listings_count": "Número de Listados", "price": "Precio (€)"},
+                            title="Distribución de Precios por Número de Listados"
+                        )
+                        # Añadir línea de tendencia (mediana)
+                        median_prices = plot_data_filtered.groupby("host_listings_count")["price"].median().reindex(valid_listings)
+                        fig.add_trace(
+                            go.Scatter(
+                                x=median_prices.index,
+                                y=median_prices.values,
+                                mode="lines+markers",
+                                line=dict(color="#00A699", width=3),
+                                marker=dict(size=8),
+                                name="Mediana de Precio"
+                            )
+                        )
+                        # Actualizar diseño
+                        fig.update_traces(
+                            fillcolor="rgba(255, 90, 95, 0.2)",
+                            line_color="#FF5A5F",
+                            line_width=2
+                        )
+                        fig.update_layout(
+                            xaxis_title="Número de Listados",
+                            yaxis_title="Precio (€)",
+                            title=dict(text="Distribución de Precios por Número de Listados", font=dict(color="white"), x=0.5),
+                            xaxis=dict(tickmode="linear", dtick=1),
+                            yaxis=dict(range=[0, plot_data_filtered["price"].quantile(0.95)]),
+                            showlegend=True,
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error al generar el gráfico de violín: {e}")
+                        st.write("Valores únicos en 'host_listings_count':", plot_data_filtered["host_listings_count"].unique())
+                else:
+                    st.warning("No hay valores de número de listados con suficientes datos para mostrar el gráfico.")
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'host_listings_count' o 'price'.")
-        
-        
-        if "host_total_listings_count" in filtered_data.columns:
-            fig = px.histogram(
-                filtered_data,
-                x="host_total_listings_count",
-                nbins=20,
-                labels={"host_total_listings_count": "Total de Listados"},
-                title="Distribución del Total de Listados por Anfitrión"
-            )
-            fig.update_layout(title=dict(text="Distribución del Total de Listados por Anfitrión", font=dict(color="white"), x=0.5))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("La columna 'host_total_listings_count' no está disponible.")
 
 # Pestaña 5: Análisis de Reseñas
 with tabs[4]:

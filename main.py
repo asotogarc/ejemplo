@@ -1433,12 +1433,16 @@ with tabs[5]:
                                 values=min_nights_data["Porcentaje"],
                                 labels=min_nights_data["Rango"],
                                 hole=0.5,
-                                marker_colors=["#FF5A5F", "#00A699", "#484848"],
+                                marker=dict(
+                                    colors=["#FF5A5F", "#00A699", "#484848"],
+                                    line=dict(color="white", width=2)  # Bordes blancos para mayor contraste
+                                ),
                                 textinfo="percent+label",
                                 textposition="inside",
                                 textfont=dict(color="white", size=12),
                                 hovertemplate="%{label}: %{value:.1f}% (%{customdata} alojamientos)",
-                                customdata=min_nights_data["Conteo"]
+                                customdata=min_nights_data["Conteo"],
+                                opacity=0.9
                             )
                         )
                         # Círculo central para mediana
@@ -1460,9 +1464,6 @@ with tabs[5]:
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
                             margin=dict(t=100, b=100, l=50, r=50)
-                        )
-                        fig.update_traces(
-                            transitions=[dict(duration=500, easing="cubic-in-out")]
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     else:

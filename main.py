@@ -235,7 +235,7 @@ with col3:
     st.markdown(f"""
     <div class="metric-card">
         <div class="metric-value">{filtered_data['review_scores_rating'].mean():.1f}</div>
-        <div class="metricAlles: Puntuación Media</div>
+        <div class="metric-label">Puntuación Media</div>
     </div>
     """, unsafe_allow_html=True)
 with col4:
@@ -266,6 +266,95 @@ tabs = st.tabs([
 with tabs[0]:
     st.markdown('<div class="section-header">Distribución Geográfica de Alojamientos</div>', unsafe_allow_html=True)
     col1, col2 = st.columns([2, 1])
+    with col1:
+        # Verificar datos para el mapa
+        if (len(filtered_data) > 0 and
+            not filtered_data[["latitude", "longitude", "price"]].isna().all().any()):
+            try:
+                # Preparar datos para el mapa - asegurando que los datos estén limpios
+                map_data = filtered_data.sample(min(len(filtered_data), 1000)).copy()
+                map_data = map_data.dropna(subset=["latitude", "longitude", "price"])
+                
+                # Asegurar que los tipos de datos son correctos
+                map_data["latitude"] = map_data["latitude"].astype(float)
+                map_data["longitude"] = map_data["longitude"].astype(float)
+                map_data["price"] = map_data["price"].astype(float)
+                
+                # Verificar que hay datos después de la limpieza
+                if len(map_data) > 0:
+                    # Usar plotly.graph_objects en lugar de plotly express
+                    fig = go.Figure()
+                    
+                    fig.add_trace(go.Scattermapbox(
+                        lat=map_data["latitude"],
+                        lon=map_data["longitude"],
+                        mode="markers",
+                        marker=dict(
+                            size=10,
+                            color=map_data["price"],
+                            colorscale="Viridis",
+                            opacity=0.7,
+                            colorbar=dict(title="Precio (€)")
+                        ),
+                        text=map_data.apply(
+                            lambda row: f"Nombre: {row.get('name', 'N/A')}<br>"
+                                       f"Precio: €{row.get('price', 0):.2f}<br>"
+                                       f"Tipo: {row.get('room_type', 'N/A')}<br>"
+                                       f"Puntuación: {row.get('review_scores_rating', 0):.1f}",
+                            axis=1
+                        ),
+                        hoverinfo="text"
+                    ))
+                    
+                    fig.update_layout(
+                        mapbox_style="open-street-map",
+                        mapbox=dict(
+                            center=dict(
+                                lat=map_data["latitude"].mean(),
+                                lon=map_data["longitude"].mean()
+                            ),
+                            zoom=11
+                        ),
+                        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+                        height=500
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("Después de limpiar los datos no válidos, no hay suficientes datos para mostrar en el mapa.")
+            except Exception as e:
+                st.error(f"Error al generar el mapa: {e}")
+                st.text("Mostrando visualización alternativa en su lugar...")
+                
+                # Visualización alternativa (gráfico de dispersión simple)
+                fig = px.scatter(
+                    filtered_data.sample(min(len(filtered_data), 1000)),
+                    x="longitude",
+                    y="latitude",
+                    color="price",
+                    size="number_of_reviews",
+                    hover_name="name",
+                    title="Distribución de Alojamientos",
+                    color_continuous_scale=px.colors.sequential.Viridis
+                )
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("No hay suficientes datos válidos con coordenadas o precios para mostrar el mapa.")
+
+    with col2:
+        st.markdown('<div class="section-header">Distribución por Vecindario</div>', unsafe_allow_html=True)
+        neighbourhood_counts = filtered_data["neighbourhood_cleansed"].value_counts().head(10)
+        fig = px.bar(
+            x=neighbourhood_counts.values,
+            y=neighbourhood_counts.index,
+            orientation="h",
+            labels={"x": "Número de Alojamientos", "y": "Vecindario"},
+            color=neighbourhood_counts.values,
+            color_continuous_scale=px.colors.sequential.Viridis,
+            title=""
+        )
+        fig.update_layout(yaxis={"categoryorder": "total ascending"})
+        st.plotly_chart(fig, use_container_width=True)
 
 with tabs[1]:
     col1, col2 = st.columns(2)
@@ -300,7 +389,33 @@ with tabs[1]:
         </div>
         """, unsafe_allow_html=True)
 
-
+    with col2:
+        st.markdown('<div class="section-header">Precios por Vecindario</div>', unsafe_allow_html=True)
+        price_by_neighbourhood = filtered_data.groupby("neighbourhood_cleansed")["price"].median().sort_values(ascending=False).head(10)
+        fig = px.bar(
+            x=price_by_neighbourhood.values,
+            y=price_by_neighbourhood.index,
+            orientation="h",
+            labels={"x": "Precio Mediano (€)", "y": "Vecindario"},
+            color=price_by_neighbourhood.values,
+            color_continuous_scale=px.colors.sequential.Plasma,
+            title=""
+        )
+        fig.update_layout(yaxis={"categoryorder": "total ascending"})
+        st.plotly_chart(fig, use_container_width=True)
+        st.markdown('<div class="section-header">Comparación por Tipo de Habitación</div>', unsafe_allow_html=True)
+        fig = px.box(
+            filtered_data,
+            x="room_type",
+            y="price",
+            color="room_type",
+            labels={"price": "Precio (€)", "room_type": "Tipo de Habitación"},
+            title="",
+            category_orders={"room_type": sorted(filtered_data["room_type"].unique())},
+            points="outliers"
+        )
+        fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
 
 with tabs[2]:
     col1, col2 = st.columns(2)
@@ -355,7 +470,7 @@ with tabs[2]:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown('<div class="section-header">Amenidades más Comunes</div>', unsafe_allow_html=True)
-        if "amenities" in filtered_data.columns and common_amenities:
+        if "amenities" in filtered_data.columns and len(common_amenities) > 0:
             amenities_df = pd.DataFrame(Counter(all_amenities).most_common(15), columns=["amenity", "count"])
             fig = px.bar(
                 amenities_df,
@@ -373,31 +488,41 @@ with tabs[2]:
 
     with col2:
         st.markdown('<div class="section-header">Disponibilidad vs. Precio</div>', unsafe_allow_html=True)
-        fig = px.scatter(
-            filtered_data,
-            x="availability_365",
-            y="price",
-            color="room_type",
-            opacity=0.7,
-            labels={"availability_365": "Disponibilidad (días/año)", "price": "Precio (€)"},
-            title=""
-        )
-        x_range = np.array([0, 365])
-        slope, intercept, r_value, p_value, std_err = stats.linregress(
-            filtered_data["availability_365"].fillna(0),
-            filtered_data["price"].fillna(filtered_data["price"].mean())
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=x_range,
-                y=slope * x_range + intercept,
-                mode="lines",
-                name=f"Tendencia (r={r_value:.2f})",
-                line=dict(color="red", width=2, dash="dot")
+        if "availability_365" in filtered_data.columns:
+            fig = px.scatter(
+                filtered_data,
+                x="availability_365",
+                y="price",
+                color="room_type",
+                opacity=0.7,
+                labels={"availability_365": "Disponibilidad (días/año)", "price": "Precio (€)"},
+                title=""
             )
-        )
-        fig.update_layout(height=450)
-        st.plotly_chart(fig, use_container_width=True)
+            
+            # Solo añadir la línea de tendencia si hay datos suficientes
+            if len(filtered_data) > 5:
+                x_range = np.array([0, 365])
+                try:
+                    slope, intercept, r_value, p_value, std_err = stats.linregress(
+                        filtered_data["availability_365"].fillna(0),
+                        filtered_data["price"].fillna(filtered_data["price"].mean())
+                    )
+                    fig.add_trace(
+                        go.Scatter(
+                            x=x_range,
+                            y=slope * x_range + intercept,
+                            mode="lines",
+                            name=f"Tendencia (r={r_value:.2f})",
+                            line=dict(color="red", width=2, dash="dot")
+                        )
+                    )
+                except Exception as e:
+                    st.warning(f"No se pudo calcular la línea de tendencia: {e}")
+                
+            fig.update_layout(height=450)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No hay datos de disponibilidad para esta ciudad")
 
 with tabs[3]:
     # Datos para análisis de reseñas

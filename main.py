@@ -278,7 +278,7 @@ with tabs[0]:
         map_data["price"] = map_data["price"].astype(float)
     
         # Verificar una vez más que no haya valores NaN
-        if len(map_data) > 0:
+    if len(map_data) > 0:
             fig = px.scatter_mapbox(
                 map_data,
                 lat="latitude",
@@ -298,11 +298,9 @@ with tabs[0]:
                 height=500
             )
             st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("No hay suficientes datos válidos con coordenadas o precios para mostrar el mapa.")
     else:
-        st.warning("No hay suficientes datos válidos con coordenadas o precios para mostrar el mapa.")
-
+            st.warning("No hay suficientes datos válidos con coordenadas o precios para mostrar el mapa.")
+    
     with col2:
         st.markdown('<div class="section-header">Distribución por Vecindario</div>', unsafe_allow_html=True)
         neighbourhood_counts = filtered_data["neighbourhood_cleansed"].value_counts().head(10)

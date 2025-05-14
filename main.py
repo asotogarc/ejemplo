@@ -1565,9 +1565,9 @@ if "maximum_nights" in filtered_data.columns:
             st.write("Estadísticas de 'maximum_nights':", plot_data["maximum_nights"].describe())
     else:
         st.warning("No hay datos suficientes para mostrar el gráfico.")
-else:
 
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+
 if "last_scraped" in filtered_data.columns:
     plot_data = filtered_data.dropna(subset=["last_scraped"]).copy()
     if len(plot_data) > 0:

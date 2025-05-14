@@ -846,57 +846,49 @@ with tabs[3]:
             plot_data = filtered_data.dropna(subset=["host_acceptance_rate", "price"]).copy()
             if len(plot_data) > 0:
                 try:
-                    # Limitar precios extremos para mejor visualización
-                    plot_data["price"] = plot_data["price"].clip(upper=plot_data["price"].quantile(0.95))
-                    # Crear gráfico hexbin
-                    fig = go.Figure()
-                    fig.add_trace(
-                        go.Histogram2d(
-                            x=plot_data["host_acceptance_rate"],
-                            y=plot_data["price"],
-                            nbinsx=30,
-                            nbinsy=30,
-                            colorscale=[[0, "rgba(0,0,0,0)"], [0.1, "#00A699"], [1, "#FF5A5F"]],
-                            showscale=True,
-                            colorbar=dict(title="Densidad")
+                    # Crear rangos de tasa de aceptación
+                    bins = [0, 0.5, 0.8, 1.0]
+                    labels = ["0-50%", "50-80%", "80-100%"]
+                    plot_data["acceptance_range"] = pd.cut(plot_data["host_acceptance_rate"], bins=bins, labels=labels, include_lowest=True)
+                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    category_counts = plot_data["acceptance_range"].value_counts()
+                    valid_ranges = category_counts[category_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["acceptance_range"].isin(valid_ranges)]
+                    
+                    if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
+                        # Crear gráfico de caja
+                        fig = px.box(
+                            plot_data_filtered,
+                            x="acceptance_range",
+                            y="price",
+                            labels={"acceptance_range": "Tasa de Aceptación", "price": "Precio (€)"},
+                            title="Distribución de Precios por Tasa de Aceptación",
+                            color="acceptance_range",
+                            color_discrete_sequence=["#FF5A5F", "#00A699", "#484848"]
                         )
-                    )
-                    # Añadir contornos
-                    fig.add_trace(
-                        go.Histogram2dContour(
-                            x=plot_data["host_acceptance_rate"],
-                            y=plot_data["price"],
-                            contours=dict(coloring="none", showlabels=True, labelfont=dict(color="#FFFFFF")),
-                            line=dict(width=1, color="#484848"),
-                            ncontours=10
+                        # Actualizar diseño
+                        fig.update_layout(
+                            xaxis_title="Tasa de Aceptación",
+                            yaxis_title="Precio (€)",
+                            title=dict(text="Distribución de Precios por Tasa de Aceptación", font=dict(color="white"), x=0.5),
+                            yaxis=dict(range=[0, plot_data_filtered["price"].quantile(0.95)]),
+                            showlegend=False,
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
                         )
-                    )
-                    # Actualizar diseño
-                    fig.update_layout(
-                        xaxis_title="Tasa de Aceptación (%)",
-                        yaxis_title="Precio (€)",
-                        title=dict(text="Densidad de Tasa de Aceptación vs. Precio", font=dict(color="white"), x=0.5),
-                        xaxis=dict(
-                            tickvals=[0, 0.25, 0.5, 0.75, 1],
-                            ticktext=["0%", "25%", "50%", "75%", "100%"],
-                            range=[0, 1.05]
-                        ),
-                        yaxis=dict(range=[0, plot_data["price"].max() * 1.1]),
-                        showlegend=False,
-                        height=500,
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        margin=dict(t=100, b=50, l=50, r=50)
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("No hay rangos de tasa de aceptación con suficientes datos para mostrar el gráfico.")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico hexbin: {e}")
-                    st.write("Descripción de 'host_acceptance_rate':", plot_data["host_acceptance_rate"].describe())
-                    st.write("Descripción de 'price':", plot_data["price"].describe())
+                    st.error(f"Error al generar el gráfico de caja: {e}")
+                    st.write("Valores únicos en 'host_acceptance_rate':", plot_data["host_acceptance_rate"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
-            st.info("Faltan las columnas 'host_acceptance_rate' o 'price'.")        
+            st.info("Faltan las columnas 'host_acceptance_rate' o 'price'.")
 
         
 

@@ -419,24 +419,7 @@ with tabs[1]:
 
 
 
-    with col2:
-        st.markdown('<div class="section-header">Relación Dormitorios/Baños vs. Precio</div>', unsafe_allow_html=True)
-        fig = px.scatter(
-            filtered_data,
-            x="bedrooms",
-            y="bathrooms",
-            size="price",
-            color="price",
-            hover_name="name",
-            color_continuous_scale=px.colors.sequential.Viridis,
-            title=""
-        )
-        fig.update_layout(
-            xaxis_title="Número de Dormitorios",
-            yaxis_title="Número de Baños",
-            height=450
-        )
-        st.plotly_chart(fig, use_container_width=True)
+  
 
     col1, col2 = st.columns(2)
     with col1:

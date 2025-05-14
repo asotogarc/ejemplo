@@ -753,61 +753,56 @@ with tabs[3]:
             plot_data = filtered_data.dropna(subset=["host_response_rate"]).copy()
             if len(plot_data) > 0:
                 try:
-                    # Crear figura con gráfico de densidad
-                    fig = go.Figure()
-                    # Calcular densidad (KDE) usando scipy.stats
-                    kde = stats.gaussian_kde(plot_data["host_response_rate"])
-                    x_range = np.linspace(0, 1, 100)
-                    y_kde = kde(x_range)
-                    # Normalizar para mejor visualización
-                    y_kde = y_kde / y_kde.max() * 0.8
-                    # Añadir trazo de densidad
-                    fig.add_trace(
-                        go.Scatter(
-                            x=x_range,
-                            y=y_kde,
-                            mode="lines",
-                            fill="tozeroy",
-                            line=dict(color="#FF5A5F", width=2),
-                            name="Densidad",
-                            fillcolor="rgba(255, 90, 95, 0.3)"
+                    # Crear rangos de tasa de respuesta
+                    bins = [0, 0.5, 0.8, 0.95, 1.0]
+                    labels = ["0-50%", "50-80%", "80-95%", "95-100%"]
+                    plot_data["response_range"] = pd.cut(plot_data["host_response_rate"], bins=bins, labels=labels, include_lowest=True)
+                    # Contar alojamientos por rango
+                    response_counts = plot_data["response_range"].value_counts().sort_index()
+                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    valid_ranges = response_counts[response_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["response_range"].isin(valid_ranges)]
+                    
+                    if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
+                        # Recalcular conteos
+                        response_counts_filtered = plot_data_filtered["response_range"].value_counts().sort_index()
+                        # Crear datos para gráfico de barras apiladas
+                        bar_data = pd.DataFrame({
+                            "Rango": response_counts_filtered.index,
+                            "Conteo": response_counts_filtered.values
+                        })
+                        # Crear gráfico de barras apiladas
+                        fig = go.Figure()
+                        for i, (rango, conteo) in enumerate(zip(bar_data["Rango"], bar_data["Conteo"])):
+                            fig.add_trace(
+                                go.Bar(
+                                    x=["Tasa de Respuesta"],
+                                    y=[conteo],
+                                    name=rango,
+                                    marker_color=["#FF5A5F", "#00A699", "#484848", "#767676"][i % 4],
+                                    text=[f"{conteo} ({conteo/sum(bar_data['Conteo'])*100:.1f}%)"],
+                                    textposition="inside"
+                                )
+                            )
+                        # Actualizar diseño
+                        fig.update_layout(
+                            barmode="stack",
+                            xaxis_title="",
+                            yaxis_title="Número de Anfitriones",
+                            title=dict(text="Distribución de la Tasa de Respuesta del Anfitrión", font=dict(color="white"), x=0.5),
+                            showlegend=True,
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50),
+                            xaxis=dict(showticklabels=False)
                         )
-                    )
-                    # Añadir líneas de umbral y anotaciones
-                    thresholds = [0.5, 0.8, 1.0]
-                    colors = ["#00A699", "#484848", "#767676"]
-                    for thresh, color in zip(thresholds, colors):
-                        # Calcular porcentaje de anfitriones por encima del umbral
-                        percentage = (plot_data["host_response_rate"] >= thresh).mean() * 100
-                        fig.add_vline(
-                            x=thresh,
-                            line_dash="dash",
-                            line_color=color,
-                            annotation_text=f"{percentage:.1f}% ≥ {int(thresh*100)}%",
-                            annotation_position="top left",
-                            annotation_font=dict(color=color),
-                            annotation_y=0.9  # Ajustar posición vertical de la anotación
-                        )
-                    # Actualizar diseño
-                    fig.update_layout(
-                        xaxis_title="Tasa de Respuesta (%)",
-                        yaxis_title="Densidad Normalizada",
-                        title=dict(text="Distribución de la Tasa de Respuesta del Anfitrión", font=dict(color="white"), x=0.5),
-                        xaxis=dict(
-                            tickvals=[0, 0.25, 0.5, 0.75, 1],
-                            ticktext=["0%", "25%", "50%", "75%", "100%"],
-                            range=[0, 1.05]
-                        ),
-                        yaxis=dict(showticklabels=False),  # Ocultar etiquetas del eje Y para enfoque visual
-                        showlegend=False,
-                        height=500,
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        margin=dict(t=100, b=50, l=50, r=50)
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("No hay rangos de tasa de respuesta con suficientes datos para mostrar el gráfico.")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de densidad: {e}")
+                    st.error(f"Error al generar el gráfico de barras apiladas: {e}")
                     st.write("Valores únicos en 'host_response_rate':", plot_data["host_response_rate"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")

@@ -694,19 +694,56 @@ with tabs[2]:
         
         
         
-        
         if "bathrooms" in filtered_data.columns:
-            fig = px.histogram(
-                filtered_data,
-                x="bathrooms",
-                nbins=20,
-                labels={"bathrooms": "Número de Baños"},
-                title="Distribución del Número de Baños"
-            )
-            fig.update_layout(title=dict(text="Distribución del Número de Baños", font=dict(color="white"), x=0.5))
-            st.plotly_chart(fig, use_container_width=True)
+            plot_data = filtered_data.dropna(subset=["bathrooms"]).copy()
+            if len(plot_data) > 0:
+                # Limitar el número de baños a un máximo razonable (por ejemplo, 5) y agrupar valores mayores
+                plot_data["bathrooms"] = plot_data["bathrooms"].clip(upper=5)
+                # Filtrar valores con suficientes datos (mínimo 5 puntos)
+                min_points = 5
+                category_counts = plot_data["bathrooms"].value_counts()
+                valid_bathrooms = category_counts[category_counts >= min_points].index.tolist()
+                plot_data_filtered = plot_data[plot_data["bathrooms"].isin(valid_bathrooms)]
+                
+                if len(plot_data_filtered) > 0 and len(valid_bathrooms) > 0:
+                    try:
+                        # Recalcular conteos después de filtrar
+                        bathrooms_counts = plot_data_filtered["bathrooms"].value_counts().sort_index()
+                        # Preparar datos para el gráfico de donut
+                        donut_data = pd.DataFrame({
+                            "Número de Baños": bathrooms_counts.index,
+                            "Conteo": bathrooms_counts.values
+                        })
+                        # Crear gráfico de donut
+                        fig = px.pie(
+                            donut_data,
+                            names="Número de Baños",
+                            values="Conteo",
+                            title="Proporción de Alojamientos por Número de Baños",
+                            hole=0.4,  # Crear el hueco para el efecto donut
+                            color_discrete_sequence=px.colors.sequential.Viridis
+                        )
+                        fig.update_traces(
+                            textinfo="percent+label",
+                            textposition="inside",
+                            showlegend=True
+                        )
+                        fig.update_layout(
+                            title=dict(text="Proporción de Alojamientos por Número de Baños", font=dict(color="white"), x=0.5),
+                            showlegend=True,
+                            margin=dict(t=100, b=50, l=50, r=50)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error al generar el gráfico de donut: {e}")
+                        st.write("Valores únicos en 'bathrooms':", plot_data_filtered["bathrooms"].unique())
+                else:
+                    st.warning("No hay valores de número de baños con suficientes datos para mostrar el gráfico.")
+            else:
+                st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
-            st.info("La columna 'bathrooms' no está disponible.")
+            st.info("La columna 'bathrooms' no está disponible.")        
+
 
 # Pestaña 4: Características del Anfitrión
 with tabs[3]:

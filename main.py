@@ -1113,17 +1113,73 @@ with tabs[4]:
         
 
         if "review_scores_rating" in filtered_data.columns and "price" in filtered_data.columns:
-            plot_data = filtered_data.dropna(subset=["review_scores_rating", "price"]).sample(min(1000, len(filtered_data)))
+            plot_data = filtered_data.dropna(subset=["review_scores_rating", "price"]).copy()
             if len(plot_data) > 0:
-                fig = px.scatter(
-                    plot_data,
-                    x="review_scores_rating",
-                    y="price",
-                    labels={"review_scores_rating": "Puntuación General", "price": "Precio (€)"},
-                    title="Relación entre Puntuación General y Precio"
-                )
-                fig.update_layout(title=dict(text="Relación entre Puntuación General y Precio", font=dict(color="white"), x=0.5))
-                st.plotly_chart(fig, use_container_width=True)
+                try:
+                    # Normalizar puntuaciones si están en escala 0-5 o 0-10
+                    max_score = plot_data["review_scores_rating"].max()
+                    if max_score <= 5:
+                        plot_data["review_scores_rating"] = plot_data["review_scores_rating"] * 20
+                    elif max_score <= 10:
+                        plot_data["review_scores_rating"] = plot_data["review_scores_rating"] * 10
+                    # Crear rangos de puntuación general
+                    bins = [0, 80, 90, 100]
+                    labels = ["0-80", "80-90", "90-100"]
+                    plot_data["rating_range"] = pd.cut(
+                        plot_data["review_scores_rating"], bins=bins, labels=labels, include_lowest=True
+                    )
+                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    category_counts = plot_data["rating_range"].value_counts()
+                    valid_ranges = category_counts[category_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["rating_range"].isin(valid_ranges)]
+                    
+                    if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
+                        # Calcular mediana de precios y conteo por rango
+                        bubble_data = plot_data_filtered.groupby("rating_range").agg(
+                            median_price=("price", "median"),
+                            count=("price", "count")
+                        ).reset_index()
+                        # Normalizar tamaños de burbujas
+                        max_size = 50
+                        min_size = 10
+                        bubble_data["size"] = min_size + (bubble_data["count"] / bubble_data["count"].max()) * (max_size - min_size)
+                        # Crear gráfico de burbujas
+                        fig = go.Figure()
+                        for i, row in bubble_data.iterrows():
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=[row["rating_range"]],
+                                    y=[row["median_price"]],
+                                    mode="markers",
+                                    marker=dict(
+                                        size=row["size"],
+                                        color=["#FF5A5F", "#00A699", "#484848"][i % 3],
+                                        opacity=0.8,
+                                        line=dict(width=1, color="#FFFFFF")
+                                    ),
+                                    text=f"{row['rating_range']}: {int(row['count'])} alojamientos, €{row['median_price']:.0f}",
+                                    hoverinfo="text",
+                                    showlegend=False
+                                )
+                            )
+                        # Actualizar diseño
+                        fig.update_layout(
+                            xaxis_title="Puntuación General",
+                            yaxis_title="Precio Mediano (€)",
+                            title=dict(text="Relación entre Puntuación General y Precio", font=dict(color="white"), x=0.5),
+                            yaxis=dict(range=[0, bubble_data["median_price"].quantile(0.95) * 1.2]),
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("No hay rangos de puntuación general con suficientes datos (mínimo 5 puntos por rango).")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de burbujas: {str(e)}")
+                    st.write("Estadísticas de 'review_scores_rating':", plot_data["review_scores_rating"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:

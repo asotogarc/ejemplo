@@ -318,7 +318,7 @@ with tabs[1]:
     with col1:
         st.markdown('<div class="section-header">Distribución de Precios</div>', unsafe_allow_html=True)
         fig = make_subplots(rows=2, cols=1, subplot_titles=("Distribución Original (Asimétrica)", "Distribución Log-transformada"))
-       部分:fig.add_trace(
+       fig.add_trace(
             go.Histogram(
                 x=filtered_data["price"].clip(upper=filtered_data["price"].quantile(0.95)),
                 nbinsx=30,

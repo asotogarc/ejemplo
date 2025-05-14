@@ -1508,8 +1508,8 @@ with tabs[6]:
     with col1:
         # Gráfico 1: Resumen General de Reseñas
         resumen_data = pd.DataFrame({
-            "Métrica": ["Total de Reseñas", "Total de Usuarios", "Promedio de Sentimiento", "Sentimiento Mínimo", "Sentimiento Máximo"],
-            "Valor": [50000, 49812, 0.775, -0.9835, 0.9986]
+            "Métrica": ["Total de Reseñas", "Total de Usuarios"],
+            "Valor": [50000, 49812]
         })
         fig_resumen = px.bar(
             resumen_data,
@@ -1590,7 +1590,7 @@ with tabs[6]:
         )
         fig_temas.update_traces(textposition="auto")
         fig_temas.update_layout(
-            xaxis_title="Importancia (Ficticia)",
+            xaxis_title="Cantidad de palabras",
             yaxis_title="Tema",
             showlegend=False,
             title_x=0.5

@@ -32,12 +32,14 @@ st.markdown("""
         padding: 0.5rem 0;
         border-bottom: 2px solid #FF5A5F;
         margin-bottom: 1rem;
+        text-align: center;
     }
     .section-header {
         font-size: 1.5rem;
         color: #484848;
         padding: 0.3rem 0;
         margin-top: 1rem;
+        text-align: center;
     }
     .metric-card {
         background-color: #F7F7F7;
@@ -272,7 +274,7 @@ tabs = st.tabs([
     "Características del Alojamiento",
     "Características del Anfitrión",
     "Análisis de Reseñas",
-    "Modelo Predictivo"
+    "Análisis Predictivo"
 ])
 
 # Pestaña 1: Distribución Geográfica
@@ -323,7 +325,8 @@ with tabs[0]:
                             zoom=11
                         ),
                         margin={"r": 0, "t": 0, "l": 0, "b": 0},
-                        height=500
+                        height=500,
+                        title_x=0.5
                     )
                     st.plotly_chart(fig, use_container_width=True)
                 else:
@@ -341,6 +344,7 @@ with tabs[0]:
                         title="Distribución de Alojamientos",
                         color_continuous_scale=px.colors.sequential.Viridis
                     )
+                    fig.update_layout(title_x=0.5)
                     st.plotly_chart(fig, use_container_width=True)
         else:
             st.warning("Faltan datos de latitud, longitud o precio para mostrar el mapa.")
@@ -358,7 +362,7 @@ with tabs[0]:
                 color_continuous_scale=px.colors.sequential.Viridis,
                 title=""
             )
-            fig.update_layout(yaxis={"categoryorder": "total ascending"})
+            fig.update_layout(yaxis={"categoryorder": "total ascending"}, title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'neighbourhood_cleansed' no está disponible.")
@@ -367,7 +371,7 @@ with tabs[0]:
 with tabs[1]:
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="section-header">Distribución de Precios</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución de Precios de Alojamientos</div>', unsafe_allow_html=True)
         if "price" in filtered_data.columns:
             fig = make_subplots(rows=2, cols=1, subplot_titles=("Distribución Original", "Distribución Log-transformada"))
             fig.add_trace(
@@ -388,12 +392,12 @@ with tabs[1]:
                 ),
                 row=2, col=1
             )
-            fig.update_layout(height=500, showlegend=False)
+            fig.update_layout(height=500, showlegend=False, title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'price' no está disponible.")
 
-        st.markdown('<div class="section-header">Precio vs. Disponibilidad Anual</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Relación entre Precio y Disponibilidad Anual</div>', unsafe_allow_html=True)
         if "availability_365" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["availability_365", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -404,6 +408,7 @@ with tabs[1]:
                     labels={"availability_365": "Disponibilidad (días/año)", "price": "Precio (€)"},
                     title=""
                 )
+                fig.update_layout(title_x=0.5)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
@@ -411,7 +416,7 @@ with tabs[1]:
             st.info("Faltan las columnas 'availability_365' o 'price'.")
 
     with col2:
-        st.markdown('<div class="section-header">Precios por Vecindario</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Precios Medios por Vecindario</div>', unsafe_allow_html=True)
         if "neighbourhood_cleansed" in filtered_data.columns and "price" in filtered_data.columns:
             price_by_neighbourhood = filtered_data.groupby("neighbourhood_cleansed")["price"].median().sort_values(ascending=False).head(10)
             fig = px.bar(
@@ -423,16 +428,15 @@ with tabs[1]:
                 color_continuous_scale=px.colors.sequential.Plasma,
                 title=""
             )
-            fig.update_layout(yaxis={"categoryorder": "total ascending"})
+            fig.update_layout(yaxis={"categoryorder": "total ascending"}, title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Faltan las columnas 'neighbourhood_cleansed' o 'price'.")
 
-        st.markdown('<div class="section-header">Precios por Tipo de Habitación</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución de Precios por Tipo de Habitación</div>', unsafe_allow_html=True)
         if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["room_type", "price"])
             if len(plot_data) > 0:
-                # Filtrar categorías válidas
                 min_points = 1
                 category_counts = plot_data["room_type"].value_counts()
                 valid_categories = category_counts[category_counts >= min_points].index.tolist()
@@ -449,7 +453,7 @@ with tabs[1]:
                             category_orders={"room_type": sorted(valid_categories)},
                             points="outliers"
                         )
-                        fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False)
+                        fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False, title_x=0.5)
                         st.plotly_chart(fig, use_container_width=True)
                     except Exception as e:
                         st.error(f"Error al generar el gráfico de caja: {e}")
@@ -465,7 +469,7 @@ with tabs[1]:
 with tabs[2]:
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="section-header">Distribución de Tipos de Propiedad</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Tipos de Propiedad Más Comunes</div>', unsafe_allow_html=True)
         if "property_type" in filtered_data.columns:
             property_counts = filtered_data["property_type"].value_counts().head(10)
             fig = px.bar(
@@ -475,11 +479,12 @@ with tabs[2]:
                 color=property_counts.values,
                 color_continuous_scale=px.colors.sequential.Viridis
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'property_type' no está disponible.")
 
-        st.markdown('<div class="section-header">Amenidades más Comunes</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Amenidades Más Frecuentes en Alojamientos</div>', unsafe_allow_html=True)
         if "amenities" in filtered_data.columns and len(common_amenities) > 0:
             amenities_df = pd.DataFrame(Counter(all_amenities).most_common(15), columns=["amenity", "count"])
             fig = px.bar(
@@ -491,16 +496,15 @@ with tabs[2]:
                 color_continuous_scale=px.colors.sequential.Viridis,
                 title=""
             )
-            fig.update_layout(yaxis={"categoryorder": "total ascending"})
+            fig.update_layout(yaxis={"categoryorder": "total ascending"}, title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No hay datos de amenidades disponibles.")
 
-        st.markdown('<div class="section-header">Precio por Número de Habitaciones</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución de Precios según Número de Habitaciones</div>', unsafe_allow_html=True)
         if "bedrooms" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["bedrooms", "price"])
             if len(plot_data) > 0:
-                # Filtrar categorías válidas
                 min_points = 1
                 category_counts = plot_data["bedrooms"].value_counts()
                 valid_categories = category_counts[category_counts >= min_points].index.tolist()
@@ -514,6 +518,7 @@ with tabs[2]:
                             labels={"bedrooms": "Número de Habitaciones", "price": "Precio (€)"},
                             title=""
                         )
+                        fig.update_layout(title_x=0.5)
                         st.plotly_chart(fig, use_container_width=True)
                     except Exception as e:
                         st.error(f"Error al generar el gráfico de caja: {e}")
@@ -526,7 +531,7 @@ with tabs[2]:
             st.info("Faltan las columnas 'bedrooms' o 'price'.")
 
     with col2:
-        st.markdown('<div class="section-header">Precio vs. Capacidad</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Relación entre Precio y Capacidad de Alojamiento</div>', unsafe_allow_html=True)
         if "accommodates" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["accommodates", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -537,13 +542,14 @@ with tabs[2]:
                     labels={"accommodates": "Capacidad", "price": "Precio (€)"},
                     title=""
                 )
+                fig.update_layout(title_x=0.5)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'accommodates' o 'price'.")
 
-        st.markdown('<div class="section-header">Distribución de Camas</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución del Número de Camas</div>', unsafe_allow_html=True)
         if "beds" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -552,11 +558,12 @@ with tabs[2]:
                 labels={"beds": "Número de Camas"},
                 title=""
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'beds' no está disponible.")
 
-        st.markdown('<div class="section-header">Distribución de Baños</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución del Número de Baños</div>', unsafe_allow_html=True)
         if "bathrooms" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -565,6 +572,7 @@ with tabs[2]:
                 labels={"bathrooms": "Número de Baños"},
                 title=""
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'bathrooms' no está disponible.")
@@ -573,7 +581,7 @@ with tabs[2]:
 with tabs[3]:
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="section-header">Tasa de Respuesta del Anfitrión</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución de la Tasa de Respuesta del Anfitrión</div>', unsafe_allow_html=True)
         if "host_response_rate" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -582,6 +590,7 @@ with tabs[3]:
                 labels={"host_response_rate": "Tasa de Respuesta (%)"},
                 title=""
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'host_response_rate' no está disponible.")
@@ -596,11 +605,12 @@ with tabs[3]:
                 color=response_time_counts.values,
                 color_continuous_scale=px.colors.sequential.Viridis
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'host_response_time' no está disponible.")
 
-        st.markdown('<div class="section-header">Antigüedad del Anfitrión</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Antigüedad de los Anfitriones</div>', unsafe_allow_html=True)
         if "host_age_years" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -609,12 +619,13 @@ with tabs[3]:
                 labels={"host_age_years": "Años como Anfitrión"},
                 title=""
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'host_age_years' no está disponible.")
 
     with col2:
-        st.markdown('<div class="section-header">Tasa de Aceptación vs. Precio</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Relación entre Tasa de Aceptación y Precio</div>', unsafe_allow_html=True)
         if "host_acceptance_rate" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["host_acceptance_rate", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -625,13 +636,14 @@ with tabs[3]:
                     labels={"host_acceptance_rate": "Tasa de Aceptación (%)", "price": "Precio (€)"},
                     title=""
                 )
+                fig.update_layout(title_x=0.5)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'host_acceptance_rate' o 'price'.")
 
-        st.markdown('<div class="section-header">Número de Listados vs. Precio</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Relación entre Número de Listados y Precio</div>', unsafe_allow_html=True)
         if "host_listings_count" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["host_listings_count", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -642,13 +654,14 @@ with tabs[3]:
                     labels={"host_listings_count": "Número de Listados", "price": "Precio (€)"},
                     title=""
                 )
+                fig.update_layout(title_x=0.5)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'host_listings_count' o 'price'.")
 
-        st.markdown('<div class="section-header">Total de Listados del Anfitrión</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución del Total de Listados por Anfitrión</div>', unsafe_allow_html=True)
         if "host_total_listings_count" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -657,6 +670,7 @@ with tabs[3]:
                 labels={"host_total_listings_count": "Total de Listados"},
                 title=""
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'host_total_listings_count' no está disponible.")
@@ -665,7 +679,7 @@ with tabs[3]:
 with tabs[4]:
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="section-header">Distribución de Número de Reseñas</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución del Número de Reseñas</div>', unsafe_allow_html=True)
         if "number_of_reviews" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -674,11 +688,12 @@ with tabs[4]:
                 labels={"number_of_reviews": "Número de Reseñas"},
                 title=""
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'number_of_reviews' no está disponible.")
 
-        st.markdown('<div class="section-header">Puntuación General vs. Precio</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Relación entre Puntuación General y Precio</div>', unsafe_allow_html=True)
         if "review_scores_rating" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["review_scores_rating", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -689,17 +704,17 @@ with tabs[4]:
                     labels={"review_scores_rating": "Puntuación General", "price": "Precio (€)"},
                     title=""
                 )
+                fig.update_layout(title_x=0.5)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'review_scores_rating' o 'price'.")
 
-        st.markdown('<div class="section-header">Puntuación de Limpieza por Tipo de Habitación</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Puntuación de Limpieza según Tipo de Habitación</div>', unsafe_allow_html=True)
         if "review_scores_cleanliness" in filtered_data.columns and "room_type" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["review_scores_cleanliness", "room_type"])
             if len(plot_data) > 0:
-                # Filtrar categorías válidas
                 min_points = 1
                 category_counts = plot_data["room_type"].value_counts()
                 valid_categories = category_counts[category_counts >= min_points].index.tolist()
@@ -713,6 +728,7 @@ with tabs[4]:
                             labels={"room_type": "Tipo de Habitación", "review_scores_cleanliness": "Puntuación de Limpieza"},
                             title=""
                         )
+                        fig.update_layout(title_x=0.5)
                         st.plotly_chart(fig, use_container_width=True)
                     except Exception as e:
                         st.error(f"Error al generar el gráfico de caja: {e}")
@@ -730,7 +746,6 @@ with tabs[4]:
             top_neighbourhoods = filtered_data["neighbourhood_cleansed"].value_counts().head(10).index
             plot_data = filtered_data[filtered_data["neighbourhood_cleansed"].isin(top_neighbourhoods)].dropna(subset=["review_scores_location"])
             if len(plot_data) > 0:
-                # Filtrar categorías válidas
                 min_points = 1
                 category_counts = plot_data["neighbourhood_cleansed"].value_counts()
                 valid_categories = category_counts[category_counts >= min_points].index.tolist()
@@ -744,7 +759,7 @@ with tabs[4]:
                             labels={"neighbourhood_cleansed": "Vecindario", "review_scores_location": "Puntuación de Ubicación"},
                             title=""
                         )
-                        fig.update_layout(xaxis={"categoryorder": "total descending"})
+                        fig.update_layout(xaxis={"categoryorder": "total descending"}, title_x=0.5)
                         st.plotly_chart(fig, use_container_width=True)
                     except Exception as e:
                         st.error(f"Error al generar el gráfico de caja: {e}")
@@ -756,7 +771,7 @@ with tabs[4]:
         else:
             st.info("Faltan las columnas 'review_scores_location' o 'neighbourhood_cleansed'.")
 
-        st.markdown('<div class="section-header">Puntuación de Comunicación vs. Precio</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Relación entre Puntuación de Comunicación y Precio</div>', unsafe_allow_html=True)
         if "review_scores_communication" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["review_scores_communication", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -767,13 +782,14 @@ with tabs[4]:
                     labels={"review_scores_communication": "Puntuación de Comunicación", "price": "Precio (€)"},
                     title=""
                 )
+                fig.update_layout(title_x=0.5)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'review_scores_communication' o 'price'.")
 
-        st.markdown('<div class="section-header">Puntuación de Check-in</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Distribución de la Puntuación de Check-in</div>', unsafe_allow_html=True)
         if "review_scores_checkin" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -782,14 +798,14 @@ with tabs[4]:
                 labels={"review_scores_checkin": "Puntuación de Check-in"},
                 title=""
             )
+            fig.update_layout(title_x=0.5)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("La columna 'review_scores_checkin' no está disponible.")
 
-# Pestaña 6: Modelo Predictivo
+# Pestaña 6: Análisis Predictivo
 with tabs[5]:
-
-    st.markdown('<div class="section-header">Distribución de Noches Mínimas</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Distribución de Noches Mínimas Requeridas</div>', unsafe_allow_html=True)
     if "minimum_nights" in filtered_data.columns:
         fig = px.histogram(
             filtered_data,
@@ -798,11 +814,12 @@ with tabs[5]:
             labels={"minimum_nights": "Noches Mínimas"},
             title=""
         )
+        fig.update_layout(title_x=0.5)
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("La columna 'minimum_nights' no está disponible.")
 
-    st.markdown('<div class="section-header">Distribución de Noches Máximas</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Distribución de Noches Máximas Permitidas</div>', unsafe_allow_html=True)
     if "maximum_nights" in filtered_data.columns:
         fig = px.histogram(
             filtered_data,
@@ -811,11 +828,12 @@ with tabs[5]:
             labels={"maximum_nights": "Noches Máximas"},
             title=""
         )
+        fig.update_layout(title_x=0.5)
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("La columna 'maximum_nights' no está disponible.")
 
-    st.markdown('<div class="section-header">Última Fecha de Recopilación</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Frecuencia de Última Fecha de Recopilación de Datos</div>', unsafe_allow_html=True)
     if "last_scraped" in filtered_data.columns:
         last_scraped_counts = filtered_data["last_scraped"].value_counts().sort_index()
         fig = px.bar(
@@ -824,6 +842,7 @@ with tabs[5]:
             labels={"x": "Fecha de Recopilación", "y": "Número de Alojamientos"},
             title=""
         )
+        fig.update_layout(title_x=0.5)
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("La columna 'last_scraped' no está disponible.")

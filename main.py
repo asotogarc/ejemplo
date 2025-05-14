@@ -1025,7 +1025,7 @@ with tabs[3]:
                         fig.update_layout(
                             xaxis_title="Número de Listados",
                             yaxis=dict(showticklabels=False, showgrid=False, zeroline=False, range=[0.5, 1.5]),
-                            title=dict(text="Precios por Número de Listados", font=dict(color="white"), x=0.5),
+                            title=dict(text="Precios (mediana) por Número de Listados", font=dict(color="white"), x=0.5),
                             xaxis=dict(
                                 tickmode="linear",
                                 dtick=1,

@@ -545,7 +545,7 @@ with tabs[1]:
 with tabs[2]:
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.markdown('<div class="section-header">Tipos de Propiedad Más Comunes</div>', unsafe_allow_html=True)
+
         if "property_type" in filtered_data.columns:
             property_counts = filtered_data["property_type"].value_counts().head(10)
             fig = px.bar(
@@ -562,7 +562,7 @@ with tabs[2]:
             st.info("La columna 'property_type' no está disponible.")
         
         
-        st.markdown('<div class="section-header">Amenidades Más Frecuentes en Alojamientos</div>', unsafe_allow_html=True)
+
         if "amenities" in filtered_data.columns and len(common_amenities) > 0:
             amenities_df = pd.DataFrame(Counter(all_amenities).most_common(15), columns=["amenity", "count"])
             fig = px.bar(
@@ -614,7 +614,6 @@ with tabs[2]:
             st.info("Faltan las columnas 'bedrooms' o 'price'.")
 
     with col2:
-        st.markdown('<div class="section-header">Relación entre Precio y Capacidad de Alojamiento</div>', unsafe_allow_html=True)
         if "accommodates" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["accommodates", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -634,7 +633,6 @@ with tabs[2]:
         
         st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header">Distribución del Número de Camas</div>', unsafe_allow_html=True)
         if "beds" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -650,7 +648,7 @@ with tabs[2]:
         
         st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header">Distribución del Número de Baños</div>', unsafe_allow_html=True)
+        
         if "bathrooms" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,

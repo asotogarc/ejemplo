@@ -1162,37 +1162,71 @@ with tabs[4]:
 
     with col2:
 
-        if "review_scores_location" in filtered_data.columns and "neighbourhood_cleansed" in filtered_data.columns:
-            top_neighbourhoods = filtered_data["neighbourhood_cleansed"].value_counts().head(10).index
-            plot_data = filtered_data[filtered_data["neighbourhood_cleansed"].isin(top_neighbourhoods)].dropna(subset=["review_scores_location"])
+        if "review_scores_location" in filtered_data.columns and "neighbourhood" in filtered_data.columns:
+            plot_data = filtered_data.dropna(subset=["review_scores_location", "neighbourhood"]).copy()
             if len(plot_data) > 0:
-                min_points = 1
-                category_counts = plot_data["neighbourhood_cleansed"].value_counts()
-                valid_categories = category_counts[category_counts >= min_points].index.tolist()
-                if valid_categories:
-                    plot_data_filtered = plot_data[plot_data["neighbourhood_cleansed"].isin(valid_categories)]
-                    try:
-                        fig = px.box(
-                            plot_data_filtered,
-                            x="neighbourhood_cleansed",
-                            y="review_scores_location",
-                            labels={"neighbourhood_cleansed": "Vecindario", "review_scores_location": "Puntuación de Ubicación"},
-                            title="Puntuación de Ubicación por Vecindario"
-                        )
+                try:
+                    # Normalizar puntuaciones si están en escala 0-5 o 0-10
+                    max_score = plot_data["review_scores_location"].max()
+                    if max_score <= 5:
+                        plot_data["review_scores_location"] = plot_data["review_scores_location"] * 20
+                    elif max_score <= 10:
+                        plot_data["review_scores_location"] = plot_data["review_scores_location"] * 10
+                    # Calcular puntuación promedio por vecindario
+                    location_scores = plot_data.groupby("neighbourhood")["review_scores_location"].agg(
+                        mean="mean",
+                        count="count"
+                    ).reset_index()
+                    # Filtrar vecindarios con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    location_scores = location_scores[location_scores["count"] >= min_points]
+                    # Ordenar por puntuación descendente y limitar a top 10 para claridad
+                    location_scores = location_scores.sort_values("mean", ascending=False).head(10)
+                    
+                    if len(location_scores) > 0:
+                        # Crear gráfico de lollipop
+                        fig = go.Figure()
+                        for i, row in location_scores.iterrows():
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=[row["mean"]],
+                                    y=[row["neighbourhood"]],
+                                    mode="markers",
+                                    marker=dict(size=12, color="#FF5A5F", line=dict(width=1, color="#FFFFFF")),
+                                    showlegend=False
+                                )
+                            )
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=[0, row["mean"]],
+                                    y=[row["neighbourhood"], row["neighbourhood"]],
+                                    mode="lines",
+                                    line=dict(color="#00A699", width=2),
+                                    showlegend=False
+                                )
+                            )
+                        # Actualizar diseño
                         fig.update_layout(
-                            xaxis={"categoryorder": "total descending"},
-                            title=dict(text="Puntuación de Ubicación por Vecindario", font=dict(color="white"), x=0.5)
+                            xaxis_title="Puntuación Promedio de Ubicación (0-100)",
+                            yaxis_title="Vecindario",
+                            title=dict(text="Puntuación de Ubicación por Vecindario", font=dict(color="white"), x=0.5),
+                            xaxis=dict(range=[0, 100]),
+                            yaxis=dict(autorange="reversed"),  # Ordenar de mayor a menor
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
                         )
                         st.plotly_chart(fig, use_container_width=True)
-                    except Exception as e:
-                        st.error(f"Error al generar el gráfico de caja: {e}")
-                        st.write("Valores únicos en 'neighbourhood_cleansed':", plot_data_filtered["neighbourhood_cleansed"].unique())
-                else:
-                    st.warning("No hay vecindarios con suficientes datos para mostrar el gráfico.")
+                    else:
+                        st.warning("No hay vecindarios con suficientes datos (mínimo 5 puntos por vecindario).")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de lollipop: {str(e)}")
+                    st.write("Estadísticas de 'review_scores_location':", plot_data["review_scores_location"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
-            st.info("Faltan las columnas 'review_scores_location' o 'neighbourhood_cleansed'.")
+            st.info("Faltan las columnas 'review_scores_location' o 'neighbourhood'.")
         
         
         

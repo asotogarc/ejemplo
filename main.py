@@ -1052,18 +1052,63 @@ with tabs[4]:
     col1, col2 = st.columns([1, 1])
     with col1:
         if "number_of_reviews" in filtered_data.columns:
-            fig = px.histogram(
-                filtered_data,
-                x="number_of_reviews",
-                nbins=30,
-                labels={"number_of_reviews": "Número de Reseñas"},
-                title="Distribución del Número de Reseñas"
-            )
-            fig.update_layout(title=dict(text="Distribución del Número de Reseñas", font=dict(color="white"), x=0.5))
-            st.plotly_chart(fig, use_container_width=True)
+            plot_data = filtered_data.dropna(subset=["number_of_reviews"]).copy()
+            if len(plot_data) > 0:
+                try:
+                    # Crear rangos de número de reseñas
+                    bins = [0, 10, 50, 100, float("inf")]
+                    labels = ["0-10", "10-50", "50-100", ">100"]
+                    plot_data["reviews_range"] = pd.cut(
+                        plot_data["number_of_reviews"], bins=bins, labels=labels, include_lowest=True
+                    )
+                    # Contar alojamientos por rango
+                    reviews_counts = plot_data["reviews_range"].value_counts().sort_index()
+                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    valid_ranges = reviews_counts[reviews_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["reviews_range"].isin(valid_ranges)]
+                    
+                    if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
+                        # Recalcular conteos
+                        reviews_counts_filtered = plot_data_filtered["reviews_range"].value_counts().sort_index()
+                        # Preparar datos para gráfico de dona
+                        donut_data = pd.DataFrame({
+                            "Rango": reviews_counts_filtered.index,
+                            "Conteo": reviews_counts_filtered.values
+                        })
+                        # Crear gráfico de dona
+                        fig = px.pie(
+                            donut_data,
+                            names="Rango",
+                            values="Conteo",
+                            title="Proporción de Alojamientos por Número de Reseñas",
+                            hole=0.4,
+                            color_discrete_sequence=["#FF5A5F", "#00A699", "#484848", "#767676"]
+                        )
+                        fig.update_traces(
+                            textinfo="percent+label",
+                            textposition="inside",
+                            textfont=dict(color="white"),
+                            hovertemplate="%{label}: %{value} alojamientos (%{percent})"
+                        )
+                        fig.update_layout(
+                            title=dict(text="Proporción de Alojamientos por Número de Reseñas", font=dict(color="white"), x=0.5),
+                            showlegend=True,
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("No hay rangos de número de reseñas con suficientes datos (mínimo 5 puntos por rango).")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de dona: {str(e)}")
+                    st.write("Estadísticas de 'number_of_reviews':", plot_data["number_of_reviews"].describe())
+            else:
+                st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
-            st.info("La columna 'number_of_reviews' no está disponible.")
-        
+            st.info("La columna 'number_of_reviews' no está disponible.")        
         
         
 

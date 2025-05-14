@@ -750,15 +750,67 @@ with tabs[3]:
     col1, col2 = st.columns([1, 1])
     with col1:
         if "host_response_rate" in filtered_data.columns:
-            fig = px.histogram(
-                filtered_data,
-                x="host_response_rate",
-                nbins=20,
-                labels={"host_response_rate": "Tasa de Respuesta (%)"},
-                title="Distribución de la Tasa de Respuesta del Anfitrión"
-            )
-            fig.update_layout(title=dict(text="Distribución de la Tasa de Respuesta del Anfitrión", font=dict(color="white"), x=0.5))
-            st.plotly_chart(fig, use_container_width=True)
+            plot_data = filtered_data.dropna(subset=["host_response_rate"]).copy()
+            if len(plot_data) > 0:
+                try:
+                    # Crear figura con gráfico de densidad
+                    fig = go.Figure()
+                    # Calcular densidad (KDE) usando scipy.stats
+                    kde = stats.gaussian_kde(plot_data["host_response_rate"])
+                    x_range = np.linspace(0, 1, 100)
+                    y_kde = kde(x_range)
+                    # Normalizar para mejor visualización
+                    y_kde = y_kde / y_kde.max() * 0.8
+                    # Añadir trazo de densidad
+                    fig.add_trace(
+                        go.Scatter(
+                            x=x_range,
+                            y=y_kde,
+                            mode="lines",
+                            fill="tozeroy",
+                            line=dict(color="#FF5A5F", width=2),
+                            name="Densidad",
+                            fillcolor="rgba(255, 90, 95, 0.3)"
+                        )
+                    )
+                    # Añadir líneas de umbral y anotaciones
+                    thresholds = [0.5, 0.8, 1.0]
+                    colors = ["#00A699", "#484848", "#767676"]
+                    for thresh, color in zip(thresholds, colors):
+                        # Calcular porcentaje de anfitriones por encima del umbral
+                        percentage = (plot_data["host_response_rate"] >= thresh).mean() * 100
+                        fig.add_vline(
+                            x=thresh,
+                            line_dash="dash",
+                            line_color=color,
+                            annotation_text=f"{percentage:.1f}% ≥ {int(thresh*100)}%",
+                            annotation_position="top left",
+                            annotation_font=dict(color=color),
+                            annotation_y=0.9  # Ajustar posición vertical de la anotación
+                        )
+                    # Actualizar diseño
+                    fig.update_layout(
+                        xaxis_title="Tasa de Respuesta (%)",
+                        yaxis_title="Densidad Normalizada",
+                        title=dict(text="Distribución de la Tasa de Respuesta del Anfitrión", font=dict(color="white"), x=0.5),
+                        xaxis=dict(
+                            tickvals=[0, 0.25, 0.5, 0.75, 1],
+                            ticktext=["0%", "25%", "50%", "75%", "100%"],
+                            range=[0, 1.05]
+                        ),
+                        yaxis=dict(showticklabels=False),  # Ocultar etiquetas del eje Y para enfoque visual
+                        showlegend=False,
+                        height=500,
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        margin=dict(t=100, b=50, l=50, r=50)
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de densidad: {e}")
+                    st.write("Valores únicos en 'host_response_rate':", plot_data["host_response_rate"].describe())
+            else:
+                st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("La columna 'host_response_rate' no está disponible.")
         

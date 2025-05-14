@@ -296,7 +296,7 @@ tabs = st.tabs([
 
 # Pestaña 1: Distribución Geográfica
 with tabs[0]:
-    st.markdown('<div class="section-header">Distribución Geográfica de Alojamientos</div>', unsafe_allow_html=True)
+#    st.markdown('<div class="section-header">Distribución Geográfica de Alojamientos</div>', unsafe_allow_html=True)
     col1, col2 = st.columns([2, 1])
     with col1:
         if (len(filtered_data) > 0 and

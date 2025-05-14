@@ -10,7 +10,7 @@ from scipy import stats
 
 # Configuración de la página
 st.set_page_config(
-    page_title="Análisis Predictivo de Precios y Reseñas en Airbnb",
+    page_title="Análisis de Precios y Reseñas en Airbnb",
     page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -290,7 +290,7 @@ tabs = st.tabs([
     "Características del Alojamiento",
     "Características del Anfitrión",
     "Análisis de Reseñas",
-    "Análisis Predictivo"
+    "Características temporales"
 ])
 
 # Pestaña 1: Distribución Geográfica
@@ -915,7 +915,6 @@ with tabs[4]:
         else:
             st.info("La columna 'review_scores_checkin' no está disponible.")
 
-# Pestaña 6: Análisis Predictivo
 with tabs[5]:
     st.markdown('<div class="section-header">Distribución de Noches Mínimas Requeridas</div>', unsafe_allow_html=True)
     if "minimum_nights" in filtered_data.columns:
@@ -965,4 +964,4 @@ with tabs[5]:
 
 # Pie de página
 st.markdown("---")
-st.markdown("TFG - Análisis Predictivo de Precios y Segmentación de Usuarios en Airbnb | Ángel Soto García")
+st.markdown("TFG - Análisis de Precios y Reseñas en Airbnb | Ángel Soto García")

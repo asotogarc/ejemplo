@@ -422,7 +422,7 @@ with tabs[1]:
             st.info("La columna 'price' no está disponible.")
         
         
-        st.markdown('<div class="section-header">Relación entre Precio y Disponibilidad Anual</div>', unsafe_allow_html=True)
+
         if "availability_365" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["availability_365", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -462,7 +462,7 @@ with tabs[1]:
         
         
         
-        st.markdown('<div class="section-header">Distribución de Precios por Tipo de Habitación</div>', unsafe_allow_html=True)
+
         if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["room_type", "price"])
             if len(plot_data) > 0:

@@ -65,7 +65,7 @@ st.markdown("""
         margin-top: 2rem;
     }
     .info-box {
-        background-color: #EFF6FF;
+        background-color: #6057FF;
         border-left: 5px solid #3B82F6;
         padding: 1rem;
         margin: 1rem 0;
@@ -97,9 +97,7 @@ col1, col2, col3 = st.columns([1, 6, 1])
 with col2:
     st.markdown("""
     <div class="info-box">
-    Bienvenido al dashboard interactivo para el análisis de datos de Airbnb en diferentes ciudades de España (2024).  
-    Este proyecto, parte de mi TFG, explora la <b>predicción de precios</b> mediante modelos de aprendizaje automático y el 
-    <b>análisis de reseñas</b> usando procesamiento de lenguaje natural.
+    Panel interactivo para el análisis de un conjunto datos de Airbnb en diferentes ciudades de España (2024).  
     </div>
     """, unsafe_allow_html=True)
 

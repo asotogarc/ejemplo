@@ -828,18 +828,62 @@ with tabs[3]:
 
         
         if "host_age_years" in filtered_data.columns:
-            fig = px.histogram(
-                filtered_data,
-                x="host_age_years",
-                nbins=20,
-                labels={"host_age_years": "Años como Anfitrión"},
-                title="Antigüedad de los Anfitriones"
-            )
-            fig.update_layout(title=dict(text="Antigüedad de los Anfitriones", font=dict(color="white"), x=0.5))
-            st.plotly_chart(fig, use_container_width=True)
+            plot_data = filtered_data.dropna(subset=["host_age_years"]).copy()
+            if len(plot_data) > 0:
+                try:
+                    # Crear rangos de antigüedad
+                    bins = [0, 2, 5, 10, float("inf")]
+                    labels = ["0-2 años", "2-5 años", "5-10 años", ">10 años"]
+                    plot_data["age_range"] = pd.cut(plot_data["host_age_years"], bins=bins, labels=labels, include_lowest=True)
+                    # Contar alojamientos por rango
+                    age_counts = plot_data["age_range"].value_counts().sort_index()
+                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    valid_ranges = age_counts[age_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["age_range"].isin(valid_ranges)]
+                    
+                    if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
+                        # Recalcular conteos
+                        age_counts_filtered = plot_data_filtered["age_range"].value_counts().sort_index()
+                        # Preparar datos para gráfico de anillos
+                        ring_data = pd.DataFrame({
+                            "Rango de Antigüedad": age_counts_filtered.index,
+                            "Conteo": age_counts_filtered.values
+                        })
+                        # Crear gráfico de anillos
+                        fig = px.pie(
+                            ring_data,
+                            names="Rango de Antigüedad",
+                            values="Conteo",
+                            title="Proporción de Alojamientos por Antigüedad del Anfitrión",
+                            hole=0.5,  # Crear efecto de anillo
+                            color_discrete_sequence=["#FF5A5F", "#00A699", "#484848", "#767676"]
+                        )
+                        fig.update_traces(
+                            textinfo="percent+label",
+                            textposition="inside",
+                            textfont=dict(color="white"),
+                            hovertemplate="%{label}: %{value} alojamientos (%{percent})"
+                        )
+                        fig.update_layout(
+                            title=dict(text="Proporción de Alojamientos por Antigüedad del Anfitrión", font=dict(color="white"), x=0.5),
+                            showlegend=True,
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("No hay rangos de antigüedad con suficientes datos para mostrar el gráfico.")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de anillos: {e}")
+                    st.write("Valores únicos en 'host_age_years':", plot_data["host_age_years"].describe())
+            else:
+                st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("La columna 'host_age_years' no está disponible.")
-
+    
     with col2:
 
         if "host_acceptance_rate" in filtered_data.columns and "price" in filtered_data.columns:

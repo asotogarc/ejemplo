@@ -1557,18 +1557,27 @@ else:
 
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
 if "last_scraped" in filtered_data.columns:
-    last_scraped_counts = filtered_data["last_scraped"].value_counts().sort_index()
-    fig = px.bar(
-        x=last_scraped_counts.index,
-        y=last_scraped_counts.values,
-        labels={"x": "Fecha de Recopilación", "y": "Número de Alojamientos"},
-        title="Frecuencia de Última Fecha de Recopilación de Datos"
-    )
-    fig.update_layout(title=dict(text="Frecuencia de Última Fecha de Recopilación de Datos", font=dict(color="white"), x=0.5))
-    st.plotly_chart(fig, use_container_width=True)
+    plot_data = filtered_data.dropna(subset=["last_scraped"]).copy()
+    if len(plot_data) > 0:
+        try:
+            plot_data["last_scraped"] = pd.to_datetime(plot_data["last_scraped"], errors="coerce")
+            date_counts = plot_data["last_scraped"].value_counts()
+            most_common_date = date_counts.index[0].strftime("%Y-%m-%d")
+            most_common_percentage = (date_counts.iloc[0] / len(plot_data) * 100)
+            unique_dates = len(date_counts)
+            text_output = (
+                f"**Frecuencia de Última Fecha de Recopilación**\n\n"
+                f"- **Fecha más común**: {most_common_date} ({most_common_percentage:.1f}% de los alojamientos)\n"
+                f"- **Fechas únicas**: {unique_dates}"
+            )
+            st.markdown(text_output)
+        except Exception as e:
+            st.error(f"Error al generar el resumen: {str(e)}")
+            st.write("Valores únicos de 'last_scraped':", plot_data["last_scraped"].unique())
+    else:
+        st.warning("No hay datos suficientes para mostrar el resumen.")
 else:
     st.info("La columna 'last_scraped' no está disponible.")
-
 
 
 

@@ -1478,80 +1478,15 @@ with tabs[5]:
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
 
 if "maximum_nights" in filtered_data.columns:
-    plot_data = filtered_data.dropna(subset=["maximum_nights"]).copy()
-    if len(plot_data) > 0:
-        try:
-            # Tratar valores extremos (>1125 como "sin límite")
-            plot_data["maximum_nights"] = plot_data["maximum_nights"].clip(upper=1125)
-            # Crear rangos de noches máximas
-            bins = [0, 30, 365, 1125]
-            labels = ["≤30 noches", "31-365 noches", ">365 noches"]
-            plot_data["max_nights_range"] = pd.cut(
-                plot_data["maximum_nights"], bins=bins, labels=labels, include_lowest=True
-            )
-            # Calcular proporciones y conteos
-            max_nights_counts = plot_data["max_nights_range"].value_counts().sort_index()
-            max_nights_data = pd.DataFrame({
-                "Rango": max_nights_counts.index,
-                "Conteo": max_nights_counts.values,
-                "Porcentaje": (max_nights_counts / max_nights_counts.sum() * 100).values
-            })
-            # Filtrar rangos con suficientes datos (mínimo 5 puntos)
-            min_points = 5
-            max_nights_data = max_nights_data[max_nights_data["Conteo"] >= min_points]
-            
-            if len(max_nights_data) > 0:
-                # Calcular grosor del anillo según porcentaje de >365 noches
-                long_stay_percentage = max_nights_data[max_nights_data["Rango"] == ">365 noches"]["Porcentaje"].sum() if ">365 noches" in max_nights_data["Rango"].values else 0
-                outer_hole = 0.6 - (long_stay_percentage / 100 * 0.1)  # Grosor dinámico
-                # Crear gráfico de dona
-                fig = go.Figure()
-                # Dona principal
-                fig.add_trace(
-                    go.Pie(
-                        values=max_nights_data["Porcentaje"],
-                        labels=max_nights_data["Rango"],
-                        hole=0.4,
-                        marker_colors=["#FF5A5F", "#00A699", "#484848"],
-                        textinfo="percent+label",
-                        textposition="inside",
-                        textfont=dict(color="white", size=12),
-                        hovertemplate="%{label}: %{value:.1f}% (%{customdata} alojamientos)",
-                        customdata=max_nights_data["Conteo"]
-                    )
-                )
-                # Anillo exterior dinámico
-                fig.add_trace(
-                    go.Pie(
-                        values=[long_stay_percentage, 100 - long_stay_percentage],
-                        labels=[">365 noches", ""],
-                        hole=outer_hole,
-                        marker_colors=["#FFFFFF", "rgba(0,0,0,0)"],
-                        textinfo="none",
-                        hoverinfo="none",
-                        showlegend=False
-                    )
-                )
-                fig.update_layout(
-                    title=dict(text="Distribución de Noches Máximas Permitidas", font=dict(color="white"), x=0.5),
-                    showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
-                    height=400,
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    margin=dict(t=100, b=100, l=50, r=50)
-                )
-                fig.update_traces(
-                    transitions=[dict(duration=500, easing="cubic-in-out")]
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.warning("No hay rangos de noches máximas con suficientes datos (mínimo 5 puntos por rango).")
-        except Exception as e:
-            st.error(f"Error al generar el gráfico de dona: {str(e)}")
-            st.write("Estadísticas de 'maximum_nights':", plot_data["maximum_nights"].describe())
-    else:
-        st.warning("No hay datos suficientes para mostrar el gráfico.")
+    fig = px.histogram(
+        filtered_data,
+        x="maximum_nights",
+        nbins=20,
+        labels={"maximum_nights": "Noches Máximas Permitidas"},
+        title="Distribución de Noches Máximas Permitidas"
+    )
+    fig.update_layout(title=dict(text="Distribución de Noches Máximas Permitidas", font=dict(color="white"), x=0.5))
+    st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("La columna 'maximum_nights' no está disponible.")
 

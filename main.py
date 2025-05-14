@@ -788,8 +788,6 @@ with tabs[4]:
 
 # Pestaña 6: Modelo Predictivo
 with tabs[5]:
-    st.markdown('<div class="section-header">Modelo Predictivo</div>', unsafe_allow_html=True)
-    st.info("La implementación del modelo predictivo está en desarrollo. Se incluirán modelos de regresión para predecir precios basados en las características del alojamiento.")
 
     st.markdown('<div class="section-header">Distribución de Noches Mínimas</div>', unsafe_allow_html=True)
     if "minimum_nights" in filtered_data.columns:

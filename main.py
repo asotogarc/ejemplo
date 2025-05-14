@@ -1011,6 +1011,118 @@ with tabs[6]:
         """, unsafe_allow_html=True)
 
     with col2:
+
+        fig.add_trace(
+            go.Scatter(
+                x=review_data["Día"],
+                y=review_data["vader_compound"],
+                name="Sentimiento Promedio",
+                line=dict(color="#00A699", width=3)
+            ),
+            secondary_y=True
+        )
+        # Actualizar diseño
+        fig.update_layout(
+            title=dict(text="Actividad y Sentimiento por Día de la Semana", font=dict(color="white"), x=0.5),
+            xaxis_title="Día de la Semana",
+            yaxis_title="Número de Reseñas",
+            yaxis2_title="Sentimiento Promedic",
+            height=500
+        )
+        fig.update_yaxes(title_text="Número de Reseñas", secondary_y=False)
+        fig.update_yaxes(title_text="Sentimiento Promedio", secondary_y=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("""
+        <div class="info-box">
+        <b>Descripción:</b> Gráfico combinado que muestra la actividad y el sentimiento promedio de las reseñas por día de la semana. Las barras indican el número de reseñas, mientras que la línea muestra el sentimiento promedio (calculado con VADER).<br>
+        <b>Información Adicional:</b><br>
+        - Período de análisis: Semanal (por día)<br>
+        - Método de análisis de sentimiento: VADER
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="section-header">Evolución del Sentimiento Promedio por Mes</div>', unsafe_allow_html=True)
+        # Datos del gráfico de evolución del sentimiento
+        sentiment_data = pd.DataFrame({
+            "year_month": [
+                "2011-01", "2011-04", "2011-05", "2011-06", "2011-07", "2011-08", "2011-09", "2011-11", "2011-12",
+                "2012-01", "2012-02", "2012-03", "2012-05", "2012-06", "2012-07", "2012-08", "2012-09", "2012-10",
+                "2012-11", "2012-12", "2013-01", "2013-02", "2013-03", "2013-04", "2013-05", "2013-06", "2013-07",
+                "2013-08", "2013-09", "2013-10", "2013-11", "2013-12", "2014-01", "2014-02", "2014-03", "2014-04",
+                "2014-05", "2014-06", "2014-07", "2014-08", "2014-09", "2014-10", "2014-11", "2014-12", "2015-01",
+                "2015-02", "2015-03", "2015-04", "2015-05", "2015-06", "2015-07", "2015-08", "2015-09", "2015-10",
+                "2015-11", "2015-12", "2016-01", "2016-02", "2016-03", "2016-04", "2016-05", "2016-06", "2016-07",
+                "2016-08", "2016-09", "2016-10", "2016-11", "2016-12", "2017-01", "2017-02", "2017-03", "2017-04",
+                "2017-05", "2017-06", "2017-07", "2017-08", "2017-09", "2017-10", "2017-11", "2017-12", "2018-01",
+                "2018-02", "2018-03", "2018-04", "2018-05", "2018-06", "2018-07", "2018-08", "2018-09", "2018-10",
+                "2018-11", "2018-12", "2019-01", "2019-02", "2019-03", "2019-04", "2019-05", "2019-06", "2019-07",
+                "2019-08", "2019-09", "2019-10", "2019-11", "2019-12", "2020-01", "2020-02", "2020-03", "2020-04",
+                "2020-05", "2020-06", "2020-07", "2020-08", "2020-09", "2020-10", "2020-11", "2020-12", "2021-01",
+                "2021-02", "2021-03", "2021-04", "2021-05", "2021-06", "2021-07", "2021-08", "2021-09", "2021-10",
+                "2021-11", "2021-12", "2022-01", "2022-02", "2022-03", "2022-04", "2022-05", "2022-06", "2022-07",
+                "2022-08", "2022-09", "2022-10", "2022-11", "2022-12", "2023-01", "2023-02", "2023-03", "2023-04",
+                "2023-05", "2023-06", "2023-07", "2023-08", "2023-09", "2023-10", "2023-11", "2023-12", "2024-01",
+                "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10",
+                "2024-11", "2024-12"
+            ],
+            "vader_compound": [
+                0.930000, 0.982000, 0.895700, 0.841100, 0.897150, 0.926600, 0.925667, 0.950100, 0.950100,
+                0.929650, 0.977467, 0.968800, 0.879814, 0.954233, 0.922167, 0.930478, 0.938389, 0.958967,
+                0.955725, 0.867740, 0.868100, 0.903800, 0.884836, 0.867258, 0.894208, 0.941038, 0.928197,
+                0.933975, 0.928989, 0.920045, 0.892260, 0.857892, 0.873842, 0.890317, 0.915682, 0.931698,
+                0.904630, 0.917828, 0.895731, 0.877517, 0.908437, 0.884002, 0.920922, 0.846467, 0.880280,
+                0.886132, 0.877107, 0.884918, 0.894229, 0.877178, 0.841583, 0.874817, 0.890381, 0.879286,
+                0.889026, 0.838844, 0.845016, 0.857054, 0.870728, 0.887189, 0.874846, 0.850709, 0.842540,
+                0.840764, 0.847850, 0.839682, 0.808977, 0.811831, 0.786819, 0.816883, 0.803289, 0.819001,
+                0.793763, 0.816881, 0.786060, 0.809665, 0.808683, 0.833374, 0.808800, 0.772921, 0.795341,
+                0.788197, 0.780953, 0.786639, 0.795594, 0.824602, 0.794505, 0.793590, 0.800579, 0.813679,
+                0.791136, 0.759824, 0.749889, 0.763619, 0.770189, 0.767264, 0.786655, 0.785676, 0.796091,
+                0.788698, 0.797587, 0.782660, 0.765938, 0.778965, 0.774635, 0.768214, 0.730183, 0.688162,
+                0.670969, 0.652791, 0.720687, 0.650906, 0.678824, 0.688786, 0.732879, 0.660308, 0.700060,
+                0.620922, 0.747775, 0.721271, 0.745978, 0.742302, 0.745000, 0.716813, 0.751618, 0.729861,
+                0.734373, 0.737536, 0.716178, 0.721339, 0.726500, 0.762065, 0.786046, 0.784476, 0.775399,
+                0.760688, 0.761779, 0.750654, 0.733250, 0.735556, 0.726192, 0.726420, 0.747397, 0.753837,
+                0.767235, 0.764159, 0.770953, 0.736370, 0.773050, 0.765165, 0.749125, 0.720443, 0.730310,
+                0.742275, 0.738527, 0.761762, 0.769454, 0.762163, 0.760203, 0.744064, 0.728979, 0.681660,
+                0.440333, 0.698543
+            ]
+        })
+        # Convertir year_month a formato datetime para mejor manejo
+        sentiment_data["year_month"] = pd.to_datetime(sentiment_data["year_month"], format="%Y-%m")
+        # Crear gráfico de líneas
+        fig = px.line(
+            sentiment_data,
+            x="year_month",
+            y="vader_compound",
+            labels={"year_month": "Fecha", "vader_compound": "Sentimiento Promedio (VADER)"},
+            title="Evolución del Sentimiento Promedio por Mes"
+        )
+        fig.update_traces(line=dict(color="#00A699", width=3))
+        fig.update_layout(
+            title=dict(text="Evolución del Sentimiento Promedio por Mes", font=dict(color="white"), x=0.5),
+            xaxis_title="Fecha",
+            yaxis_title="Sentimiento Promedio (VADER)",
+            height=500,
+            xaxis=dict(
+                tickformat="%Y-%m",
+                dtick="M12",  # Mostrar etiquetas cada 12 meses
+                tickangle=45
+            )
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("""
+        <div class="info-box">
+        <b>Descripción:</b> Gráfico de líneas que muestra la evolución del sentimiento promedio (calculado con VADER) de las reseñas a lo largo del tiempo, agrupado por mes.<br>
+        <b>Información Adicional:</b><br>
+        - Período de análisis: Mensual (04/01/2011 - 25/12/2024)<br>
+        - Método de análisis de sentimiento: VADER
+        </div>
+        """, unsafe_allow_html=True)
+        
         st.markdown('<div class="section-header">Temas Principales</div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="info-box">

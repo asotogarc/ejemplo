@@ -848,22 +848,60 @@ with tabs[3]:
     with col2:
 
         if "host_acceptance_rate" in filtered_data.columns and "price" in filtered_data.columns:
-            plot_data = filtered_data.dropna(subset=["host_acceptance_rate", "price"]).sample(min(1000, len(filtered_data)))
+            plot_data = filtered_data.dropna(subset=["host_acceptance_rate", "price"]).copy()
             if len(plot_data) > 0:
-                fig = px.scatter(
-                    plot_data,
-                    x="host_acceptance_rate",
-                    y="price",
-                    labels={"host_acceptance_rate": "Tasa de Aceptación (%)", "price": "Precio (€)"},
-                    title="Relación entre Tasa de Aceptación y Precio"
-                )
-                fig.update_layout(title=dict(text="Relación entre Tasa de Aceptación y Precio", font=dict(color="white"), x=0.5))
-                st.plotly_chart(fig, use_container_width=True)
+                try:
+                    # Limitar precios extremos para mejor visualización
+                    plot_data["price"] = plot_data["price"].clip(upper=plot_data["price"].quantile(0.95))
+                    # Crear gráfico hexbin
+                    fig = go.Figure()
+                    fig.add_trace(
+                        go.Histogram2d(
+                            x=plot_data["host_acceptance_rate"],
+                            y=plot_data["price"],
+                            nbinsx=30,
+                            nbinsy=30,
+                            colorscale=[[0, "rgba(0,0,0,0)"], [0.1, "#00A699"], [1, "#FF5A5F"]],
+                            showscale=True,
+                            colorbar=dict(title="Densidad")
+                        )
+                    )
+                    # Añadir contornos
+                    fig.add_trace(
+                        go.Histogram2dContour(
+                            x=plot_data["host_acceptance_rate"],
+                            y=plot_data["price"],
+                            contours=dict(coloring="none", showlabels=True, labelfont=dict(color="#FFFFFF")),
+                            line=dict(width=1, color="#484848"),
+                            ncontours=10
+                        )
+                    )
+                    # Actualizar diseño
+                    fig.update_layout(
+                        xaxis_title="Tasa de Aceptación (%)",
+                        yaxis_title="Precio (€)",
+                        title=dict(text="Densidad de Tasa de Aceptación vs. Precio", font=dict(color="white"), x=0.5),
+                        xaxis=dict(
+                            tickvals=[0, 0.25, 0.5, 0.75, 1],
+                            ticktext=["0%", "25%", "50%", "75%", "100%"],
+                            range=[0, 1.05]
+                        ),
+                        yaxis=dict(range=[0, plot_data["price"].max() * 1.1]),
+                        showlegend=False,
+                        height=500,
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        margin=dict(t=100, b=50, l=50, r=50)
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico hexbin: {e}")
+                    st.write("Descripción de 'host_acceptance_rate':", plot_data["host_acceptance_rate"].describe())
+                    st.write("Descripción de 'price':", plot_data["price"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
-            st.info("Faltan las columnas 'host_acceptance_rate' o 'price'.")
-        
+            st.info("Faltan las columnas 'host_acceptance_rate' o 'price'.")        
 
         
 

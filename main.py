@@ -971,7 +971,7 @@ with tabs[3]:
                     # Filtrar valores con suficientes datos (mínimo 5 puntos)
                     min_points = 5
                     category_counts = plot_data["host_listings_count"].value_counts()
-                    valid_listings = category_counts[category_counts >= min_points].index.tolist()
+                    valid_listings = sorted(category_counts[category_counts >= min_points].index.tolist())
                     plot_data_filtered = plot_data[plot_data["host_listings_count"].isin(valid_listings)]
                     
                     if len(plot_data_filtered) > 0 and len(valid_listings) > 0:
@@ -982,14 +982,20 @@ with tabs[3]:
                         ).reset_index()
                         # Normalizar valores para colores y tamaños
                         tile_data["color_value"] = tile_data["median_price"] / tile_data["median_price"].max()
-                        tile_data["size"] = np.sqrt(tile_data["count"] / tile_data["count"].max()) * 100  # Escala proporcional
+                        tile_data["size"] = np.sqrt(tile_data["count"] / tile_data["count"].max()) * 80  # Escala ajustada
+                        # Ajustar posiciones Y para evitar superposición
+                        tile_data["y_pos"] = 1 + (tile_data.index % 2) * 0.2 - 0.1  # Alternar posiciones Y
                         # Crear gráfico de mosaico
                         fig = go.Figure()
                         for i, row in tile_data.iterrows():
+                            # Formato compacto del texto
+                            text = f"€{row['median_price']:.0f} ({int(row['count'])})"
+                            # Ajustar tamaño de fuente según tamaño de burbuja
+                            font_size = min(12, max(8, row['size'] / 5))
                             fig.add_trace(
                                 go.Scatter(
                                     x=[row["host_listings_count"]],
-                                    y=[1],  # Fila única para mosaico
+                                    y=[row["y_pos"]],
                                     mode="markers+text",
                                     marker=dict(
                                         size=row["size"],
@@ -1000,12 +1006,12 @@ with tabs[3]:
                                         opacity=0.9,
                                         line=dict(width=1, color="#FFFFFF")
                                     ),
-                                    text=f"€{row['median_price']:.0f}<br>{int(row['count'])}",
+                                    text=[text],
                                     textposition="middle center",
-                                    textfont=dict(color="white", size=12),
+                                    textfont=dict(color="white", size=font_size),
                                     hoverinfo="text",
                                     hovertext=f"{int(row['host_listings_count'])} listados: €{row['median_price']:.0f}, {int(row['count'])} alojamientos",
-                                    showlegend=False
+                                    showlegend=False  # Eliminar leyenda
                                 )
                             )
                         # Actualizar diseño
@@ -1013,7 +1019,11 @@ with tabs[3]:
                             xaxis_title="Número de Listados",
                             yaxis=dict(showticklabels=False, showgrid=False, zeroline=False, range=[0.5, 1.5]),
                             title=dict(text="Precios por Número de Listados", font=dict(color="white"), x=0.5),
-                            xaxis=dict(tickmode="linear", dtick=1, range=[min(valid_listings)-0.5, max(valid_listings)+0.5]),
+                            xaxis=dict(
+                                tickmode="linear",
+                                dtick=1,
+                                range=[min(valid_listings)-0.7, max(valid_listings)+0.7]  # Más espacio
+                            ),
                             height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
@@ -1030,7 +1040,6 @@ with tabs[3]:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'host_listings_count' o 'price'.")
-
 # Pestaña 5: Análisis de Reseñas
 with tabs[4]:
     col1, col2 = st.columns([1, 1])

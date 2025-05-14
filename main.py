@@ -5,29 +5,89 @@ import plotly.graph_objects as go
 from datetime import datetime
 from collections import Counter
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
 
+# Configuración de la página
 st.set_page_config(
     page_title="Análisis Predictivo de Precios y Reseñas en Airbnb",
-    page_icon="",
+    page_icon="🏠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Ocultar el pie de página
+# Estilos CSS personalizados
 st.markdown("""
     <style>
+    .main-header {
+        font-size: 2.5rem;
+        color: #FF5A5F;
+        text-align: center;
+        padding: 1rem 0;
+        font-weight: bold;
+    }
+    .subheader {
+        font-size: 1.8rem;
+        color: #484848;
+        padding: 0.5rem 0;
+        border-bottom: 2px solid #FF5A5F;
+        margin-bottom: 1rem;
+    }
+    .section-header {
+        font-size: 1.5rem;
+        color: #484848;
+        padding: 0.3rem 0;
+        margin-top: 1rem;
+    }
+    .metric-card {
+        background-color: #F7F7F7;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #FF5A5F;
+    }
+    .metric-label {
+        font-size: 1rem;
+        color: #767676;
+    }
+    .footer {
+        text-align: center;
+        padding: 1rem 0;
+        color: #767676;
+        border-top: 1px solid #ddd;
+        margin-top: 2rem;
+    }
+    .info-box {
+        background-color: #EFF6FF;
+        border-left: 5px solid #3B82F6;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 0 5px 5px 0;
+    }
     footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
 # Título e introducción
-st.title("Análisis de Datos de Airbnb en España 2024")
-st.markdown("""
-Bienvenido al dashboard interactivo para el análisis de datos de Airbnb en diferentes ciudades de España (2024).  
-Este proyecto, parte de mi TFG, explora:  *Predicción de precios* mediante modelos de aprendizaje automático.  
-*Análisis de reseñas* usando procesamiento de lenguaje natural.  
-Autor: Ángel Soto García - Grado en Ciencia de Datos - UOC
-""")
+st.markdown('<div class="main-header">Análisis de Datos de Airbnb en España 2024</div>', unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns([1, 6, 1])
+with col2:
+    st.markdown("""
+    <div class="info-box">
+    Bienvenido al dashboard interactivo para el análisis de datos de Airbnb en diferentes ciudades de España (2024).  
+    Este proyecto, parte de mi TFG, explora la <b>predicción de precios</b> mediante modelos de aprendizaje automático y el 
+    <b>análisis de reseñas</b> usando procesamiento de lenguaje natural.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<p style='text-align: right;'><i>Autor: Ángel Soto García - Grado en Ciencia de Datos - UOC</i></p>", unsafe_allow_html=True)
 
 # Diccionario de ciudades y URLs
 ciudades_urls = {
@@ -43,13 +103,18 @@ ciudades_urls = {
 }
 
 # Sidebar para selección de ciudad y filtros
-st.sidebar.header("Selección de Ciudad")
+st.sidebar.markdown("<h2 style='text-align: center; color: #FF5A5F;'>🔍 Controles</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<h3>Selección de Ciudad</h3>", unsafe_allow_html=True)
 ciudad_seleccionada = st.sidebar.selectbox("Selecciona una ciudad:", list(ciudades_urls.keys()))
-try:
-    data = pd.read_parquet(ciudades_urls[ciudad_seleccionada])
-except Exception as e:
-    st.error(f"Error al cargar los datos de {ciudad_seleccionada}: {e}")
-    st.stop()
+
+# Carga de datos con barra de progreso
+with st.spinner(f"Cargando datos de {ciudad_seleccionada}..."):
+    try:
+        data = pd.read_parquet(ciudades_urls[ciudad_seleccionada])
+        st.sidebar.success(f"Datos de {ciudad_seleccionada} cargados correctamente.")
+    except Exception as e:
+        st.error(f"Error al cargar los datos de {ciudad_seleccionada}: {e}")
+        st.stop()
 
 # Limpiar datos de vecindarios y room_type
 if "neighbourhood_cleansed" in data.columns:
@@ -65,11 +130,12 @@ if "room_type" not in data.columns:
 
 room_type_options = [str(room) for room in data["room_type"].unique() if pd.notna(room) and room is not None]
 
-st.sidebar.header("Filtros")
+# Filtros en sidebar
+st.sidebar.markdown("<h3>Filtros</h3>", unsafe_allow_html=True)
 neighborhoods = st.sidebar.multiselect(
     "Seleccionar vecindarios",
     options=neighborhoods_options,
-    default=neighborhoods_options
+    default=neighborhoods_options[:5] if len(neighborhoods_options) > 5 else neighborhoods_options
 )
 room_types = st.sidebar.multiselect(
     "Seleccionar tipos de habitación",
@@ -80,9 +146,10 @@ price_min = float(data["price"].min()) if not data["price"].empty else 0.0
 price_max = float(data["price"].max()) if not data["price"].empty else 1000.0
 price_range = st.sidebar.slider(
     "Rango de precios (€)",
-    min_value=price_min,
-    max_value=price_max,
-    value=(price_min, price_max)
+    min_value=int(price_min),
+    max_value=min(int(price_max), 1000),  # Limitamos a 1000€ para mejor visualización
+    value=(int(price_min), min(int(price_max), 500)),  # Valor predeterminado más razonable
+    step=10
 )
 min_reviews = st.sidebar.slider(
     "Número mínimo de reseñas",
@@ -93,8 +160,8 @@ min_reviews = st.sidebar.slider(
 min_nights_range = st.sidebar.slider(
     "Rango de noches mínimas",
     min_value=int(data["minimum_nights"].min()),
-    max_value=int(data["minimum_nights"].max()),
-    value=(int(data["minimum_nights"].min()), int(data["minimum_nights"].max()))
+    max_value=min(int(data["minimum_nights"].max()), 30),  # Limitamos a 30 para mejor visualización
+    value=(int(data["minimum_nights"].min()), min(int(data["minimum_nights"].max()), 7))
 )
 
 # Filtrar datos
@@ -114,85 +181,362 @@ filtered_data["host_age_years"] = (datetime.now() - filtered_data["host_since"])
 filtered_data["occupancy_rate"] = (365 - filtered_data["availability_365"]) / 365
 filtered_data["price_per_person"] = filtered_data["price"] / filtered_data["accommodates"]
 
+# Procesar log_price para manejar la asimetría
+filtered_data["log_price"] = np.log1p(filtered_data["price"])
+
 if filtered_data["host_response_rate"].dtype == object:
     filtered_data["host_response_rate"] = filtered_data["host_response_rate"].str.rstrip("%").astype(float) / 100
 
 if "amenities" in filtered_data.columns:
-    all_amenities = [amenity for sublist in filtered_data["amenities"] for amenity in sublist]
+    # Convertimos a lista si está en formato string
+    if isinstance(filtered_data["amenities"].iloc[0], str):
+        filtered_data["amenities"] = filtered_data["amenities"].apply(eval)
+    
+    all_amenities = []
+    for amenity_list in filtered_data["amenities"]:
+        if isinstance(amenity_list, list):
+            all_amenities.extend(amenity_list)
+    
     common_amenities = [item[0] for item in Counter(all_amenities).most_common(10)]
     for amenity in common_amenities:
-        filtered_data[f"has_{amenity}"] = filtered_data["amenities"].apply(lambda x: amenity in x)
+        filtered_data[f"has_{amenity}"] = filtered_data["amenities"].apply(lambda x: amenity in x if isinstance(x, list) else False)
 
-# Sección de visualizaciones interactivas
-st.header(f"Visualizaciones para {ciudad_seleccionada}")
-option = st.selectbox(
-    "Selecciona el tipo de visualización:",
-    [
-        "Mapa",
-        "Precios por Vecindario",
-        "Cantidad por Tipo de Habitación",
-        "Distribución de Precios",
-        "Relación Precio-Puntuación",
-        "Precio por Tipo de Propiedad",
-        "Precios por Número de Dormitorios",
-        "Antigüedad del Host vs Precio",
-        "Frecuencia de Amenities",
-        "Impacto de Wifi en Precio",
-        "Tasa de Respuesta vs Puntuación",
-        "Tiempo de Respuesta vs Comunicación",
-        "Disponibilidad vs Precio",
-        "Capacidad vs Precio por Persona",
-        "Puntuación de Limpieza vs Precio",
-        "Listados del Host vs Precio",
-        "Distribución de Noches Mínimas",
-        "Puntuación de Ubicación vs Precio",
-        "Análisis de Clusters",
-        "Predicción de Precios"
-    ]
-)
+# Verificar si hay suficientes datos filtrados
+if len(filtered_data) < 5:
+    st.warning(f"Solo hay {len(filtered_data)} alojamientos con los filtros actuales. Por favor, ajusta los filtros para ver más datos.")
 
-# Datos para la sección de clusters
-data_dia_semana = pd.DataFrame({
-    "Día": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
-    "vader_compound": [0.776859, 0.783723, 0.776271, 0.773506, 0.775032, 0.776225, 0.764861],
-    "num_reseñas": [7200, 7500, 7300, 7100, 7400, 7600, 6900]  # Valores estimados
-})
+# Panel de métricas resumidas
+st.markdown('<div class="subheader">📊 Métricas Clave</div>', unsafe_allow_html=True)
+col1, col2, col3, col4, col5 = st.columns(5)
+with col1:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-value">€{filtered_data['price'].median():.2f}</div>
+        <div class="metric-label">Precio Mediano</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col2:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-value">{len(filtered_data)}</div>
+        <div class="metric-label">Alojamientos</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col3:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-value">{filtered_data['review_scores_rating'].mean():.1f}</div>
+        <div class="metric-label">Puntuación Media</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col4:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-value">{filtered_data['occupancy_rate'].mean():.1%}</div>
+        <div class="metric-label">Ocupación Media</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col5:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-value">{filtered_data['host_age_years'].mean():.1f}</div>
+        <div class="metric-label">Años de Anfitrión</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-data_clusters = pd.DataFrame({
-    "cluster": [0, 1, 2],
-    "count": [7130.0, 3837.0, 39033.0],
-    "mean": [0.853238, 0.720461, 0.765594],
-    "std": [0.130881, 0.207740, 0.300997],
-    "min": [-0.8899, -0.7579, -0.9835],
-    "25%": [0.7906, 0.5267, 0.7096],
-    "50%": [0.8977, 0.7783, 0.8885],
-    "75%": [0.9460, 0.8885, 0.9524],
-    "max": [0.9970, 0.9948, 0.9986]
-})
+# Sección de visualizaciones
+st.markdown(f'<div class="subheader">📈 Visualizaciones para {ciudad_seleccionada}</div>', unsafe_allow_html=True)
 
-# Corregido: Datos para el gráfico mensual con la lista correcta
-data_mensual = pd.DataFrame({
-    "year_month": [
-        "2011-01", "2011-04", "2011-05", "2011-06", "2011-07", "2011-08", "2011-09", "2011-11", "2011-12",
-        "2012-01", "2012-02", "2012-03", "2012-05", "2012-06", "2012-07", "2012-08", "2012-09", "2012-10",
-        "2012-11", "2012-12", "2013-01", "2013-02", "2013-03", "2013-04", "2013-05", "2013-06", "2013-07",
-        "2013-08", "2013-09", "2013-10", "2013-11", "2013-12", "2014-01", "2014-02", "2014-03", "2014-04",
-        "2014-05", "2014-06", "2014-07", "2014-08", "2014-09", "2014-10", "2014-11", "2014-12", "2015-01",
-        "2015-02", "2015-03", "2015-04", "2015-05", "2015-06", "2015-07", "2015-08", "2015-09", "2015-10",
-        "2015-11", "2015-12", "2016-01", "2016-02", "2016-03", "2016-04", "2016-05", "2016-06", "2016-07",
-        "2016-08", "2016-09", "2016-10", "2016-11", "2016-12", "2017-01", "2017-02", "2017-03", "2017-04",
-        "2017-05", "2017-06", "2017-07", "2017-08", "2017-09", "2017-10", "2017-11", "2017-12", "2018-01",
-        "2018-02", "2018-03", "2018-04", "2018-05", "2018-06", "2018-07", "2018-08", "2018-09", "2018-10",
-        "2018-11", "2018-12", "2019-01", "2019-02", "2019-03", "2019-04", "2019-05", "2019-06", "2019-07",
-        "2019-08", "2019-09", "2019-10", "2019-11", "2019-12", "2020-01", "2020-02", "2020-03", "2020-04",
-        "2020-05", "2020-06", "2020-07", "2020-08", "2020-09", "2020-10", "2020-11", "2020-12", "2021-01",
-        "2021-02", "2021-03", "2021-04", "2021-05", "2021-06", "2021-07", "2021-08", "2021-09", "2021-10",
-        "2021-11", "2021-12", "2022-01", "2022-02", "2022-03", "2022-04", "2022-05", "2022-06", "2022-07",
-        "2022-08", "2022-09", "2022-10", "2022-11", "2022-12", "2023-01", "2023-02", "2023-03", "2023-04",
-        "2023-05", "2023-06", "2023-07", "2023-08", "2023-09", "2023-10", "2023-11", "2023-12", "2024-01",
-        "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10",
-        "2024-11", "2024-12"
-    ],
+tabs = st.tabs([
+    "Distribución Geográfica", 
+    "Análisis de Precios", 
+    "Características del Alojamiento", 
+    "Análisis de Reseñas",
+    "Modelo Predictivo"
+])
+
+with tabs[0]:
+    st.markdown('<div class="section-header">Distribución Geográfica de Alojamientos</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # Mapa con plotly
+        fig = px.scatter_mapbox(
+            filtered_data.sample(min(len(filtered_data), 1000)),  # Limitamos a 1000 puntos para rendimiento
+            lat="latitude",
+            lon="longitude",
+            color="price",
+            size="number_of_reviews",
+            hover_name="name",
+            hover_data=["price", "room_type", "review_scores_rating"],
+            zoom=11,
+            color_continuous_scale=px.colors.sequential.Plasma,
+            opacity=0.7,
+            title=""
+        )
+        fig.update_layout(
+            mapbox_style="open-street-map",
+            margin={"r":0,"t":0,"l":0,"b":0},
+            height=500
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.markdown('<div class="section-header">Distribución por Vecindario</div>', unsafe_allow_html=True)
+        
+        # Conteo de propiedades por vecindario
+        neighbourhood_counts = filtered_data['neighbourhood_cleansed'].value_counts().head(10)
+        fig = px.bar(
+            x=neighbourhood_counts.values,
+            y=neighbourhood_counts.index,
+            orientation='h',
+            labels={'x': 'Número de Alojamientos', 'y': 'Vecindario'},
+            color=neighbourhood_counts.values,
+            color_continuous_scale=px.colors.sequential.Viridis,
+            title=""
+        )
+        fig.update_layout(yaxis={'categoryorder':'total ascending'})
+        st.plotly_chart(fig, use_container_width=True)
+
+with tabs[1]:
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="section-header">Distribución de Precios</div>', unsafe_allow_html=True)
+        
+        # Histograma de precios (original y log-transformado)
+        fig = make_subplots(rows=2, cols=1, subplot_titles=("Distribución Original (Asimétrica)", "Distribución Log-transformada"))
+        
+        # Histograma de precios original
+        fig.add_trace(
+            go.Histogram(
+                x=filtered_data["price"].clip(upper=filtered_data["price"].quantile(0.95)),  # Limitamos outliers
+                nbinsx=30,
+                marker_color='#FF5A5F',
+                name="Precio Original"
+            ),
+            row=1, col=1
+        )
+        
+        # Histograma de log_price
+        fig.add_trace(
+            go.Histogram(
+                x=filtered_data["log_price"],
+                nbinsx=30,
+                marker_color='#00A699',
+                name="Log-Precio"
+            ),
+            row=2, col=1
+        )
+        
+        fig.update_layout(height=500, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown("""
+        <div class="info-box" style="font-size:0.9rem;">
+        ℹ️ <b>Nota sobre la distribución de precios:</b> La variable precio muestra una marcada asimetría positiva (cola derecha), 
+        común en datos económicos. La transformación logarítmica ayuda a normalizar esta distribución, 
+        facilitando el análisis estadístico y mejorando los modelos predictivos.
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="section-header">Precios por Vecindario</div>', unsafe_allow_html=True)
+        
+        # Precios medianos por vecindario
+        price_by_neighbourhood = filtered_data.groupby("neighbourhood_cleansed")["price"].median().sort_values(ascending=False).head(10)
+        fig = px.bar(
+            x=price_by_neighbourhood.values,
+            y=price_by_neighbourhood.index,
+            orientation='h',
+            labels={'x': 'Precio Mediano (€)', 'y': 'Vecindario'},
+            color=price_by_neighbourhood.values,
+            color_continuous_scale=px.colors.sequential.Plasma,
+            title=""
+        )
+        fig.update_layout(yaxis={'categoryorder':'total ascending'})
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown('<div class="section-header">Comparación por Tipo de Habitación</div>', unsafe_allow_html=True)
+        
+        # Box plot de precios por tipo de habitación
+        fig = px.box(
+            filtered_data,
+            x="room_type",
+            y="price",
+            color="room_type",
+            labels={"price": "Precio (€)", "room_type": "Tipo de Habitación"},
+            title="",
+            category_orders={"room_type": sorted(filtered_data["room_type"].unique())},
+            points="outliers"  # Solo muestra outliers
+        )
+        fig.update_layout(xaxis={'categoryorder':'total descending'}, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+with tabs[2]:
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="section-header">Capacidad vs. Precio</div>', unsafe_allow_html=True)
+        
+        fig = px.scatter(
+            filtered_data,
+            x="accommodates",
+            y="price",
+            color="room_type",
+            size="review_scores_rating",
+            hover_name="name",
+            hover_data=["bedrooms", "bathrooms", "price"],
+            opacity=0.7,
+            title=""
+        )
+        
+        # Añadir línea de tendencia
+        fig.add_trace(
+            go.Scatter(
+                x=sorted(filtered_data["accommodates"].unique()),
+                y=[filtered_data[filtered_data["accommodates"]==accom]["price"].median() for accom in sorted(filtered_data["accommodates"].unique())],
+                mode='lines+markers',
+                name='Precio Mediano',
+                line=dict(color='red', width=2, dash='dot')
+            )
+        )
+        
+        fig.update_layout(
+            xaxis_title="Capacidad (personas)",
+            yaxis_title="Precio (€)",
+            height=450
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:        
+        st.markdown('<div class="section-header">Relación Dormitorios/Baños vs. Precio</div>', unsafe_allow_html=True)
+        
+        # Tamaño del alojamiento vs precio
+        fig = px.scatter(
+            filtered_data,
+            x="bedrooms",
+            y="bathrooms",
+            size="price",
+            color="price",
+            hover_name="name",
+            color_continuous_scale=px.colors.sequential.Viridis,
+            title=""
+        )
+        
+        fig.update_layout(
+            xaxis_title="Número de Dormitorios",
+            yaxis_title="Número de Baños",
+            height=450
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="section-header">Amenidades más Comunes</div>', unsafe_allow_html=True)
+        
+        if "amenities" in filtered_data.columns:
+            # Calcular las amenidades más comunes
+            all_amenities = []
+            for amenity_list in filtered_data["amenities"]:
+                if isinstance(amenity_list, list):
+                    all_amenities.extend(amenity_list)
+            
+            amenity_counts = Counter(all_amenities).most_common(15)
+            amenities_df = pd.DataFrame(amenity_counts, columns=["amenity", "count"])
+            
+            fig = px.bar(
+                amenities_df,
+                x="count",
+                y="amenity",
+                orientation='h',
+                color="count",
+                color_continuous_scale=px.colors.sequential.Viridis,
+                title=""
+            )
+            fig.update_layout(yaxis={'categoryorder':'total ascending'})
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No hay datos de amenidades disponibles para esta ciudad.")
+    
+    with col2:
+        st.markdown('<div class="section-header">Disponibilidad vs. Precio</div>', unsafe_allow_html=True)
+        
+        # Gráfico de dispersión de disponibilidad vs precio
+        fig = px.scatter(
+            filtered_data,
+            x="availability_365",
+            y="price",
+            color="room_type",
+            opacity=0.7,
+            labels={"availability_365": "Disponibilidad (días/año)", "price": "Precio (€)"},
+            title=""
+        )
+        
+        # Añadir línea de tendencia
+        x_range = np.array([0, 365])
+        slope, intercept, r_value, p_value, std_err = stats.linregress(
+            filtered_data["availability_365"], 
+            filtered_data["price"]
+        )
+        
+        fig.add_trace(
+            go.Scatter(
+                x=x_range,
+                y=slope * x_range + intercept,
+                mode='lines',
+                name=f'Tendencia (r={r_value:.2f})',
+                line=dict(color='red', width=2, dash='dot')
+            )
+        )
+        
+        fig.update_layout(height=450)
+        st.plotly_chart(fig, use_container_width=True)
+
+with tabs[3]:
+    # Datos para la sección de clusters
+    data_dia_semana = pd.DataFrame({
+        "Día": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+        "vader_compound": [0.776859, 0.783723, 0.776271, 0.773506, 0.775032, 0.776225, 0.764861],
+        "num_reseñas": [7200, 7500, 7300, 7100, 7400, 7600, 6900]  # Valores estimados
+    })
+
+    data_clusters = pd.DataFrame({
+        "cluster": [0, 1, 2],
+        "count": [7130.0, 3837.0, 39033.0],
+        "mean": [0.853238, 0.720461, 0.765594],
+        "std": [0.130881, 0.207740, 0.300997],
+        "min": [-0.8899, -0.7579, -0.9835],
+        "25%": [0.7906, 0.5267, 0.7096],
+        "50%": [0.8977, 0.7783, 0.8885],
+        "75%": [0.9460, 0.8885, 0.9524],
+        "max": [0.9970, 0.9948, 0.9986]
+    })
+
+    data_mensual = pd.DataFrame({
+        "year_month": [
+            "2011-01", "2011-04", "2011-05", "2011-06", "2011-07", "2011-08", "2011-09", "2011-11", "2011-12",
+            "2012-01", "2012-02", "2012-03", "2012-05", "2012-06", "2012-07", "2012-08", "2012-09", "2012-10",
+            "2012-11", "2012-12", "2013-01", "2013-02", "2013-03", "2013-04", "2013-05", "2013-06", "2013-07",
+            "2013-08", "2013-09", "2013-10", "2013-11", "2013-12", "2014-01", "2014-02", "2014-03", "2014-04",
+            "2014-05", "2014-06", "2014-07", "2014-08", "2014-09", "2014-10", "2014-11", "2014-12", "2015-01",
+            "2015-02", "2015-03", "2015-04", "2015-05", "2015-06", "2015-07", "2015-08", "2015-09", "2015-10",
+            "2015-11", "2015-12", "2016-01", "2016-02", "2016-03", "2016-04", "2016-05", "2016-06", "2016-07",
+            "2016-08", "2016-09", "2016-10", "2016-11", "2016-12", "2017-01", "2017-02", "2017-03", "2017-04",
+            "2017-05", "2017-06", "2017-07", "2017-08", "2017-09", "2017-10", "2017-11", "2017-12", "2018-01",
+            "2018-02", "2018-03", "2018-04", "2018-05", "2018-06", "2018-07", "2018-08", "2018-09", "2018-10",
+            "2018-11", "2018-12", "2019-01", "2019-02", "2019-03", "2019-04", "2019-05", "2019-06", "2019-07",
+            "2019-08", "2019-09", "2019-10", "2019-11", "2019-12", "2020-01", "2020-02", "2020-03", "2020-04",
+            "2020-05", "2020-06", "2020-07", "2020-08", "2020-09", "2020-10", "2020-11", "2020-12", "2021-01",
+            "2021-02", "2021-03", "2021-04", "2021-05", "2021-06", "2021-07", "2021-08", "2021-09", "2021-10",
+            "2021-11", "2021-12", "2022-01", "2022-02", "2022-03", "2022-04", "2022-05", "2022-06", "2022-07",
+            "2022-08", "2022-09", "2022-10", "2022-11", "2022-12", "2023-01", "2023-02", "2023-03", "2023-04",
+            "2023-05", "2023-06", "2023-07", "2023-08", "2023-09", "2023-10", "2023-11", "2023-12", "2024-01",
+            "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10",
+            "2024-11", "2024-12"
+        ],
     "vader_compound": [
         0.930000, 0.982000, 0.895700, 0.841100, 0.897150, 0.926600, 0.925667, 0.950100, 0.950100,
         0.929650, 0.977467, 0.968800, 0.879814, 0.954233, 0.922167, 0.930478, 0.938389, 0.958967,

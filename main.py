@@ -268,35 +268,46 @@ with tabs[0]:
     col1, col2 = st.columns([2, 1])
     with col1:
         # Verificar datos para el mapa
-        if (len(filtered_data) > 0 and
-            not filtered_data[["latitude", "longitude", "price"]].isna().any().any()):
-            map_data = filtered_data.sample(min(len(filtered_data), 1000)).copy()
-            map_data = map_data.dropna(subset=["latitude", "longitude", "price"])
-            map_data["latitude"] = map_data["latitude"].astype(float)
-            map_data["longitude"] = map_data["longitude"].astype(float)
-            map_data["price"] = map_data["price"].astype(float)
-
-            fig = px.scatter_mapbox(
-                map_data,
-                lat="latitude",
-                lon="longitude",
-                color="price",
-                size="number_of_reviews",
-                hover_name="name",
-                hover_data=["price", "room_type", "review_scores_rating"],
-                zoom=11,
-                color_continuous_scale=px.colors.sequential.Plasma,
-                opacity=0.7,
-                title=""
-            )
-            fig.update_layout(
-                mapbox_style="open-street-map",
-                margin={"r": 0, "t": 0, "l": 0, "b": 0},
-                height=500
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("No hay suficientes datos válidos con coordenadas o precios para mostrar el mapa.")
+        # In the Distribución Geográfica tab
+if (len(filtered_data) > 0 and
+    not filtered_data[["latitude", "longitude", "price"]].isna().any().any()):
+    map_data = filtered_data.sample(min(len(filtered_data), 1000)).copy()
+    # Drop rows with NaN in any column used by the plot
+    map_data = map_data.dropna(subset=["latitude", "longitude", "price", "number_of_reviews", "name", "room_type", "review_scores_rating"])
+    
+    # Ensure numeric types
+    map_data["latitude"] = map_data["latitude"].astype(float)
+    map_data["longitude"] = map_data["longitude"].astype(float)
+    map_data["price"] = map_data["price"].astype(float)
+    map_data["number_of_reviews"] = map_data["number_of_reviews"].astype(float)
+    
+    # Ensure no zero or negative values for size (number_of_reviews)
+    map_data["number_of_reviews"] = map_data["number_of_reviews"].clip(lower=1)
+    
+    if len(map_data) == 0:
+        st.warning("No hay datos válidos después de filtrar valores nulos. Ajusta los filtros.")
+    else:
+        fig = px.scatter_mapbox(
+            map_data,
+            lat="latitude",
+            lon="longitude",
+            color="price",
+            size="number_of_reviews",
+            hover_name="name",
+            hover_data=["price", "room_type", "review_scores_rating"],
+            zoom=11,
+            color_continuous_scale=px.colors.sequential.Plasma,
+            opacity=0.7,
+            title=""
+        )
+        fig.update_layout(
+            mapbox_style="open-street-map",
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            height=500
+        )
+        st.plotly_chart(fig, use_container_width=True)
+else:
+    st.warning("No hay suficientes datos válidos con coordenadas o precios para mostrar el mapa.")
 
     with col2:
         st.markdown('<div class="section-header">Distribución por Vecindario</div>', unsafe_allow_html=True)

@@ -631,7 +631,7 @@ with tabs[2]:
         else:
             st.info("Faltan las columnas 'accommodates' o 'price'.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        
         
         if "beds" in filtered_data.columns:
             fig = px.histogram(
@@ -646,7 +646,7 @@ with tabs[2]:
         else:
             st.info("La columna 'beds' no está disponible.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        
         
         
         if "bathrooms" in filtered_data.columns:
@@ -666,7 +666,6 @@ with tabs[2]:
 with tabs[3]:
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.markdown('<div class="section-header">Distribución de la Tasa de Respuesta del Anfitrión</div>', unsafe_allow_html=True)
         if "host_response_rate" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -680,9 +679,7 @@ with tabs[3]:
         else:
             st.info("La columna 'host_response_rate' no está disponible.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header">Tiempo de Respuesta del Anfitrión</div>', unsafe_allow_html=True)
         if "host_response_time" in filtered_data.columns:
             response_time_counts = filtered_data["host_response_time"].value_counts()
             fig = px.bar(
@@ -698,9 +695,8 @@ with tabs[3]:
         else:
             st.info("La columna 'host_response_time' no está disponible.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+
         
-        st.markdown('<div class="section-header">Antigüedad de los Anfitriones</div>', unsafe_allow_html=True)
         if "host_age_years" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -715,7 +711,7 @@ with tabs[3]:
             st.info("La columna 'host_age_years' no está disponible.")
 
     with col2:
-        st.markdown('<div class="section-header">Relación entre Tasa de Aceptación y Precio</div>', unsafe_allow_html=True)
+
         if "host_acceptance_rate" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["host_acceptance_rate", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -733,9 +729,9 @@ with tabs[3]:
         else:
             st.info("Faltan las columnas 'host_acceptance_rate' o 'price'.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+
         
-        st.markdown('<div class="section-header">Relación entre Número de Listados y Precio</div>', unsafe_allow_html=True)
+
         if "host_listings_count" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["host_listings_count", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -753,9 +749,7 @@ with tabs[3]:
         else:
             st.info("Faltan las columnas 'host_listings_count' o 'price'.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header">Distribución del Total de Listados por Anfitrión</div>', unsafe_allow_html=True)
         if "host_total_listings_count" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -773,7 +767,6 @@ with tabs[3]:
 with tabs[4]:
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.markdown('<div class="section-header">Distribución del Número de Reseñas</div>', unsafe_allow_html=True)
         if "number_of_reviews" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -787,9 +780,9 @@ with tabs[4]:
         else:
             st.info("La columna 'number_of_reviews' no está disponible.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header">Relación entre Puntuación General y Precio</div>', unsafe_allow_html=True)
+        
+
         if "review_scores_rating" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["review_scores_rating", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -807,9 +800,9 @@ with tabs[4]:
         else:
             st.info("Faltan las columnas 'review_scores_rating' o 'price'.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header">Puntuación de Limpieza según Tipo de Habitación</div>', unsafe_allow_html=True)
+        
+
         if "review_scores_cleanliness" in filtered_data.columns and "room_type" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["review_scores_cleanliness", "room_type"])
             if len(plot_data) > 0:
@@ -839,7 +832,7 @@ with tabs[4]:
             st.info("Faltan las columnas 'review_scores_cleanliness' o 'room_type'.")
 
     with col2:
-        st.markdown('<div class="section-header">Puntuación de Ubicación por Vecindario</div>', unsafe_allow_html=True)
+
         if "review_scores_location" in filtered_data.columns and "neighbourhood_cleansed" in filtered_data.columns:
             top_neighbourhoods = filtered_data["neighbourhood_cleansed"].value_counts().head(10).index
             plot_data = filtered_data[filtered_data["neighbourhood_cleansed"].isin(top_neighbourhoods)].dropna(subset=["review_scores_location"])
@@ -872,9 +865,9 @@ with tabs[4]:
         else:
             st.info("Faltan las columnas 'review_scores_location' o 'neighbourhood_cleansed'.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header">Relación entre Puntuación de Comunicación y Precio</div>', unsafe_allow_html=True)
+        
+
         if "review_scores_communication" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["review_scores_communication", "price"]).sample(min(1000, len(filtered_data)))
             if len(plot_data) > 0:
@@ -892,9 +885,8 @@ with tabs[4]:
         else:
             st.info("Faltan las columnas 'review_scores_communication' o 'price'.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header">Distribución de la Puntuación de Check-in</div>', unsafe_allow_html=True)
+        
         if "review_scores_checkin" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
@@ -910,7 +902,6 @@ with tabs[4]:
 
 # Pestaña 6: Características temporales
 with tabs[5]:
-    st.markdown('<div class="section-header">Distribución de Noches Mínimas Requeridas</div>', unsafe_allow_html=True)
     if "minimum_nights" in filtered_data.columns:
         fig = px.histogram(
             filtered_data,
@@ -926,7 +917,6 @@ with tabs[5]:
     
     st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="section-header">Distribución de Noches Máximas Permitidas</div>', unsafe_allow_html=True)
     if "maximum_nights" in filtered_data.columns:
         fig = px.histogram(
             filtered_data,
@@ -942,7 +932,7 @@ with tabs[5]:
     
     st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="section-header">Frecuencia de Última Fecha de Recopilación de Datos</div>', unsafe_allow_html=True)
+
     if "last_scraped" in filtered_data.columns:
         last_scraped_counts = filtered_data["last_scraped"].value_counts().sort_index()
         fig = px.bar(
@@ -963,7 +953,7 @@ with tabs[6]:
     col1, col2 = st.columns([1, 1])
 
     with col1:
-        st.markdown('<div class="section-header">Resumen General</div>', unsafe_allow_html=True)
+
         st.markdown("""
         <div class="info-box">
         <h3>Resumen General de Reseñas</h3>
@@ -978,9 +968,8 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        
 
-        st.markdown('<div class="section-header">Clusters de Reseñas</div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="info-box">
         <h3>Cluster 0</h3>
@@ -1005,7 +994,7 @@ with tabs[6]:
         """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown('<div class="section-header">Temas Principales</div>', unsafe_allow_html=True)
+
         st.markdown("""
         <div class="info-box">
         <h3>Temas Identificados</h3>
@@ -1019,9 +1008,9 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        
 
-        st.markdown('<div class="section-header">Actividad y Sentimiento por Día de la Semana</div>', unsafe_allow_html=True)
+
         # Datos del gráfico
         review_data = pd.DataFrame({
             "Día": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
@@ -1071,9 +1060,8 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        
 
-        st.markdown('<div class="section-header">Evolución del Sentimiento Promedio por Mes</div>', unsafe_allow_html=True)
         # Datos del gráfico de evolución del sentimiento
         sentiment_data = pd.DataFrame({
             "year_month": [

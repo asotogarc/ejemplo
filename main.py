@@ -366,7 +366,6 @@ with tabs[0]:
             st.warning("Faltan datos de latitud, longitud o precio para mostrar el mapa.")
     
     with col2:
-        st.markdown('<div class="section-header">Distribución por Vecindario</div>', unsafe_allow_html=True)
         if "neighbourhood_cleansed" in filtered_data.columns:
             neighbourhood_counts = filtered_data["neighbourhood_cleansed"].value_counts().head(10)
             fig = px.bar(

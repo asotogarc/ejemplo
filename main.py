@@ -1198,63 +1198,75 @@ with tabs[4]:
                         plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 20
                     elif max_score <= 10:
                         plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 10
-                    # Calcular mediana, conteo y porcentaje en rango alto (90-100)
-                    bins = [90, 100]
-                    plot_data["high_range"] = pd.cut(
-                        plot_data["review_scores_cleanliness"], bins=bins, labels=["90-100"], include_lowest=False
+                    # Crear rangos de puntuación de limpieza
+                    bins = [0, 80, 90, 100]
+                    labels = ["0-80", "80-90", "90-100"]
+                    plot_data["cleanliness_range"] = pd.cut(
+                        plot_data["review_scores_cleanliness"], bins=bins, labels=labels, include_lowest=True
                     )
-                    gauge_data = plot_data.groupby("room_type").agg(
-                        median_cleanliness=("review_scores_cleanliness", "median"),
-                        count=("review_scores_cleanliness", "count"),
-                        high_percentage=("high_range", lambda x: (x.count() / len(x) * 100) if len(x) > 0 else 0)
-                    ).reset_index()
                     # Filtrar tipos de habitación con suficientes datos (mínimo 5 puntos)
                     min_points = 5
-                    gauge_data = gauge_data[gauge_data["count"] >= min_points]
+                    category_counts = plot_data["room_type"].value_counts()
+                    valid_types = category_counts[category_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["room_type"].isin(valid_types)]
                     
-                    if len(gauge_data) > 0:
-                        # Normalizar tamaños de medidores (según conteo)
-                        max_count = gauge_data["count"].max()
-                        gauge_data["size"] = 0.8 + (gauge_data["count"] / max_count) * 0.4  # Escala de 0.8 a 1.2
-                        # Calcular colores según high_percentage
-                        gauge_data["color"] = gauge_data["high_percentage"].apply(
-                            lambda x: f"rgb({int(255 * x / 100)}, {int(165 - 165 * x / 100)}, {int(95 * x / 100)})"
-                        )
-                        # Crear gráfico de medidores radiales
+                    if len(plot_data_filtered) > 0 and len(valid_types) > 0:
+                        # Calcular proporciones y conteos por rango y tipo de habitación
+                        donut_data = plot_data_filtered.groupby(["room_type", "cleanliness_range"]).size().unstack(fill_value=0)
+                        donut_data = donut_data.div(donut_data.sum(axis=1), axis=0) * 100  # Convertir a porcentajes
+                        counts = plot_data_filtered.groupby(["room_type", "cleanliness_range"]).size().unstack(fill_value=0)
+                        high_percentage = donut_data["90-100"] if "90-100" in donut_data.columns else pd.Series(0, index=donut_data.index)
+                        
+                        # Crear gráfico de donas
                         fig = go.Figure()
-                        for i, row in gauge_data.iterrows():
-                            # Medidor radial
+                        colors = ["#FF5A5F", "#00A699", "#484848"]
+                        for i, room_type in enumerate(donut_data.index):
+                            # Datos de la dona
+                            values = donut_data.loc[room_type].values
+                            counts_values = counts.loc[room_type].values
+                            # Añadir dona
                             fig.add_trace(
-                                go.Indicator(
-                                    mode="gauge+number",
-                                    value=row["median_cleanliness"],
+                                go.Pie(
+                                    values=values,
+                                    labels=labels,
                                     domain=dict(
-                                        x=[i / len(gauge_data), (i + 1) / len(gauge_data)],
-                                        y=[0.2, 0.8]
+                                        x=[i / len(valid_types), (i + 1) / len(valid_types)],
+                                        y=[0.3, 0.7]
                                     ),
-                                    gauge=dict(
-                                        axis=dict(range=[0, 100], tickcolor="white", tickfont=dict(color="white")),
-                                        bar=dict(color="rgba(0,0,0,0)"),  # Sin barra de progreso
-                                        bgcolor=row["color"],
-                                        bordercolor="white",
-                                        borderwidth=1,
-                                        shape="angular",
-                                        threshold=dict(
-                                            line=dict(color="white", width=4),
-                                            thickness=0.75,
-                                            value=row["median_cleanliness"]
-                                        )
-                                    ),
-                                    number=dict(
-                                        font=dict(color="white", size=20 * row["size"]),
-                                        suffix="",
-                                        valueformat=".1f"
-                                    ),
-                                    title=dict(
-                                        text=f"{row['room_type']}<br>{row['high_percentage']:.1f}% en 90-100",
-                                        font=dict(color="white", size=12)
+                                    hole=0.4,
+                                    marker_colors=colors,
+                                    textinfo="none",
+                                    hoverinfo="label+percent+value",
+                                    hovertemplate="%{label}: %{value:.1f}% (%{customdata} alojamientos)",
+                                    customdata=counts_values
+                                )
+                            )
+                            # Añadir anillo exterior para porcentaje alto
+                            if high_percentage[room_type] > 0:
+                                fig.add_trace(
+                                    go.Pie(
+                                        values=[high_percentage[room_type], 100 - high_percentage[room_type]],
+                                        labels=["90-100", ""],
+                                        domain=dict(
+                                            x=[i / len(valid_types), (i + 1) / len(valid_types)],
+                                            y=[0.25, 0.75]
+                                        ),
+                                        hole=0.6,
+                                        marker_colors=["#FFFFFF", "rgba(0,0,0,0)"],
+                                        textinfo="none",
+                                        hoverinfo="none",
+                                        showlegend=False
                                     )
                                 )
+                            # Añadir etiqueta
+                            fig.add_annotation(
+                                x=(i + 0.5) / len(valid_types),
+                                y=0.1,
+                                text=f"{room_type}<br>{high_percentage[room_type]:.1f}% en 90-100",
+                                showarrow=False,
+                                font=dict(color="white", size=12),
+                                xanchor="center",
+                                yanchor="top"
                             )
                         # Actualizar diseño
                         fig.update_layout(
@@ -1263,12 +1275,21 @@ with tabs[4]:
                                 font=dict(color="white"),
                                 x=0.5
                             ),
-                            showlegend=False,
+                            showlegend=True,
+                            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
                             height=400,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
-                            margin=dict(t=100, b=50, l=50, r=50),
-                            grid=dict(rows=1, columns=len(gauge_data))
+                            margin=dict(t=100, b=100, l=50, r=50),
+                            annotations=[
+                                dict(
+                                    text="Rangos de Puntuación",
+                                    xref="paper", yref="paper",
+                                    x=0.5, y=-0.3,
+                                    showarrow=False,
+                                    font=dict(color="white", size=10)
+                                )
+                            ]
                         )
                         # Añadir animaciones sutiles
                         fig.update_traces(
@@ -1278,7 +1299,7 @@ with tabs[4]:
                     else:
                         st.warning("No hay tipos de habitación con suficientes datos (mínimo 5 puntos por tipo).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de medidores: {str(e)}")
+                    st.error(f"Error al generar el gráfico de donas: {str(e)}")
                     st.write("Estadísticas de 'review_scores_cleanliness':", plot_data["review_scores_cleanliness"].describe())
                     st.write("Tipos de habitación únicos:", plot_data["room_type"].unique())
             else:

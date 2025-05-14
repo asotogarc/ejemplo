@@ -268,17 +268,14 @@ with tabs[0]:
     col1, col2 = st.columns([2, 1])
     with col1:
         # Verificar datos para el mapa
-        # Encuentra la línea 279 donde está el error (en la sección del mapa)
-    if (len(filtered_data) > 0 and
-        not filtered_data[["latitude", "longitude", "price"]].isna().all().any()):
-        map_data = filtered_data.sample(min(len(filtered_data), 1000)).copy()
-        map_data = map_data.dropna(subset=["latitude", "longitude", "price"])
-        map_data["latitude"] = map_data["latitude"].astype(float)
-        map_data["longitude"] = map_data["longitude"].astype(float)
-        map_data["price"] = map_data["price"].astype(float)
-    
-        # Verificar una vez más que no haya valores NaN
-    if len(map_data) > 0:
+        if (len(filtered_data) > 0 and
+            not filtered_data[["latitude", "longitude", "price"]].isna().any().any()):
+            map_data = filtered_data.sample(min(len(filtered_data), 1000)).copy()
+            map_data = map_data.dropna(subset=["latitude", "longitude", "price"])
+            map_data["latitude"] = map_data["latitude"].astype(float)
+            map_data["longitude"] = map_data["longitude"].astype(float)
+            map_data["price"] = map_data["price"].astype(float)
+
             fig = px.scatter_mapbox(
                 map_data,
                 lat="latitude",
@@ -298,9 +295,9 @@ with tabs[0]:
                 height=500
             )
             st.plotly_chart(fig, use_container_width=True)
-    else:
+        else:
             st.warning("No hay suficientes datos válidos con coordenadas o precios para mostrar el mapa.")
-    
+
     with col2:
         st.markdown('<div class="section-header">Distribución por Vecindario</div>', unsafe_allow_html=True)
         neighbourhood_counts = filtered_data["neighbourhood_cleansed"].value_counts().head(10)

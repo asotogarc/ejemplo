@@ -417,10 +417,7 @@ with tabs[1]:
         fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-
-
-  
-
+with tabs[2]:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown('<div class="section-header">Amenidades más Comunes</div>', unsafe_allow_html=True)

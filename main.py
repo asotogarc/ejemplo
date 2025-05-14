@@ -355,7 +355,7 @@ with tabs[1]:
             orientation="h",
             labels={"x": "Precio Mediano (€)", "y": "Vecindario"},
             color=price_by_neighbourhood.values,
-            color Continuous_scale=px.colors.sequential.Plasma,
+            olor_continuous_scale=px.colors.sequential.Plasma,
             title=""
         )
         fig.update_layout(yaxis={"categoryorder": "total ascending"})

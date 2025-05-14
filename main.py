@@ -1198,38 +1198,34 @@ with tabs[4]:
                         plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 20
                     elif max_score <= 10:
                         plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 10
-                    # Calcular puntuación promedio por tipo de habitación
-                    cleanliness_scores = plot_data.groupby("room_type")["review_scores_cleanliness"].agg(
-                        mean="mean",
-                        count="count"
-                    ).reset_index()
-                    # Filtrar tipos con suficientes datos (mínimo 5 puntos)
+                    # Filtrar tipos de habitación con suficientes datos (mínimo 5 puntos)
                     min_points = 5
-                    cleanliness_scores = cleanliness_scores[cleanliness_scores["count"] >= min_points]
+                    category_counts = plot_data["room_type"].value_counts()
+                    valid_types = category_counts[category_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["room_type"].isin(valid_types)]
                     
-                    if len(cleanliness_scores) > 0:
-                        # Crear gráfico de radar
-                        fig = go.Figure()
-                        for i, room_type in enumerate(cleanliness_scores["room_type"]):
-                            score = cleanliness_scores[cleanliness_scores["room_type"] == room_type]["mean"].iloc[0]
-                            fig.add_trace(
-                                go.Scatterpolar(
-                                    r=[score, score],
-                                    theta=[room_type, room_type],
-                                    mode="lines+markers",
-                                    line=dict(color=["#FF5A5F", "#00A699", "#484848", "#767676"][i % 4], width=2),
-                                    marker=dict(size=10),
-                                    name=room_type
-                                )
-                            )
-                        # Actualizar diseño
+                    if len(plot_data_filtered) > 0 and len(valid_types) > 0:
+                        # Crear gráfico de violín
+                        fig = px.violin(
+                            plot_data_filtered,
+                            x="room_type",
+                            y="review_scores_cleanliness",
+                            labels={"room_type": "Tipo de Habitación", "review_scores_cleanliness": "Puntuación de Limpieza (0-100)"},
+                            title="Puntuación de Limpieza por Tipo de Habitación",
+                            color="room_type",
+                            color_discrete_sequence=["#FF5A5F", "#00A699", "#484848", "#767676"]
+                        )
+                        fig.update_traces(
+                            points=False,  # No mostrar puntos individuales
+                            line_width=1,
+                            scalemode="width"  # Violines de ancho uniforme
+                        )
                         fig.update_layout(
-                            polar=dict(
-                                radialaxis=dict(visible=True, range=[0, 100]),
-                                angularaxis=dict(direction="clockwise")
-                            ),
+                            xaxis_title="Tipo de Habitación",
+                            yaxis_title="Puntuación de Limpieza (0-100)",
                             title=dict(text="Puntuación de Limpieza por Tipo de Habitación", font=dict(color="white"), x=0.5),
-                            showlegend=True,
+                            yaxis=dict(range=[0, 100]),
+                            showlegend=False,
                             height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
@@ -1239,8 +1235,9 @@ with tabs[4]:
                     else:
                         st.warning("No hay tipos de habitación con suficientes datos (mínimo 5 puntos por tipo).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de radar: {str(e)}")
+                    st.error(f"Error al generar el gráfico de violín: {str(e)}")
                     st.write("Estadísticas de 'review_scores_cleanliness':", plot_data["review_scores_cleanliness"].describe())
+                    st.write("Tipos de habitación únicos:", plot_data["room_type"].unique())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:

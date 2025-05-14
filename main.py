@@ -290,7 +290,8 @@ tabs = st.tabs([
     "Características del Alojamiento",
     "Características del Anfitrión",
     "Puntuación, Limpieza y Ubicación",
-    "Características temporales"
+    "Características temporales",
+    "Características de Usuarios"
 ])
 
 # Pestaña 1: Distribución Geográfica
@@ -749,7 +750,7 @@ with tabs[3]:
                     plot_data,
                     x="host_listings_count",
                     y="price",
-                    labels={"host_listings_count": "Número de Listados", "price": "Precio (€)"},
+                    labels={"x": "Número de Listados", "y": "Precio (€)"},
                     title="Relación entre Número de Listados y Precio"
                 )
                 fig.update_layout(title=dict(text="Relación entre Número de Listados y Precio", font=dict(color="white"), x=0.5))
@@ -914,6 +915,7 @@ with tabs[4]:
         else:
             st.info("La columna 'review_scores_checkin' no está disponible.")
 
+# Pestaña 6: Características temporales
 with tabs[5]:
     st.markdown('<div class="section-header">Distribución de Noches Mínimas Requeridas</div>', unsafe_allow_html=True)
     if "minimum_nights" in filtered_data.columns:
@@ -960,6 +962,120 @@ with tabs[5]:
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("La columna 'last_scraped' no está disponible.")
+
+# Pestaña 7: Características de Usuarios
+with tabs[6]:
+    st.markdown('<div class="subheader">Características de Usuarios</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        st.markdown('<div class="section-header">Resumen General</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="info-box">
+        <h3>Resumen General de Reseñas</h3>
+        <ul>
+            <li><b>Total de Reseñas:</b> 50,000</li>
+            <li><b>Total de Usuarios:</b> 49,812</li>
+            <li><b>Período de Análisis:</b> 04/01/2011 - 25/12/2024</li>
+            <li><b>Promedio de Sentimiento:</b> 0.775</li>
+            <li><b>Sentimiento Mínimo:</b> -0.9835</li>
+            <li><b>Sentimiento Máximo:</b> 0.9986</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="section-header">Clusters de Reseñas</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="info-box">
+        <h3>Cluster 0</h3>
+        <ul>
+            <li><b>Número de Reseñas:</b> 7,130 (14.26%)</li>
+            <li><b>Sentimiento Promedio:</b> 0.853</li>
+            <li><b>Palabras Clave:</b> great, location, great location, stay, place, apartment, host, great place, clean, recommend</li>
+        </ul>
+        <h3>Cluster 1</h3>
+        <ul>
+            <li><b>Número de Reseñas:</b> 3,837 (7.674%)</li>
+            <li><b>Sentimiento Promedio:</b> 0.720</li>
+            <li><b>Palabras Clave:</b> good, location, good location, apartment, place, stay, clean, nice, host, good place</li>
+        </ul>
+        <h3>Cluster 2</h3>
+        <ul>
+            <li><b>Número de Reseñas:</b> 39,033 (78.066%)</li>
+            <li><b>Sentimiento Promedio:</b> 0.766</li>
+            <li><b>Palabras Clave:</b> apartment, stay, place, nice, location, clean, recommend, great, perfect, host</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown('<div class="section-header">Temas Principales</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="info-box">
+        <h3>Temas Identificados</h3>
+        <ul>
+            <li><b>Tema 1:</b> Check-in y asistencia (check, help, give, time, arrive, leave, arrival, question, early)</li>
+            <li><b>Tema 2:</b> Características del alojamiento (room, bed, bathroom, small, kitchen, night, work, shower, bedroom)</li>
+            <li><b>Tema 3:</b> Experiencia general (accommodation, pleasant, welcome, locate, description, foot, functional, photo, available, practical)</li>
+            <li><b>Tema 4:</b> Valoración positiva (apartment, great, stay, location, place, good, clean, recommend, nice, host)</li>
+            <li><b>Tema 5:</b> Atención y espacio (house, attentive, hostel, attention, department, floor, position, doubt, meter, wide)</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="section-header">Actividad y Sentimiento por Día de la Semana</div>', unsafe_allow_html=True)
+        # Datos del gráfico
+        review_data = pd.DataFrame({
+            "Día": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+            "review_id": [8257, 6485, 6278, 6228, 6607, 6539, 9606],
+            "vader_compound": [0.776859, 0.783723, 0.776271, 0.773506, 0.775032, 0.776225, 0.764861]
+        })
+        # Crear gráfico combinado
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        # Barras para el número de reseñas
+        fig.add_trace(
+            go.Bar(
+                x=review_data["Día"],
+                y=review_data["review_id"],
+                name="Número de Reseñas",
+                marker_color="#FF5A5F"
+            ),
+            secondary_y=False
+        )
+        # Línea para el sentimiento promedio
+        fig.add_trace(
+            go.Scatter(
+                x=review_data["Día"],
+                y=review_data["vader_compound"],
+                name="Sentimiento Promedio",
+                line=dict(color="#00A699", width=3)
+            ),
+            secondary_y=True
+        )
+        # Actualizar diseño
+        fig.update_layout(
+            title=dict(text="Actividad y Sentimiento por Día de la Semana", font=dict(color="white"), x=0.5),
+            xaxis_title="Día de la Semana",
+            yaxis_title="Número de Reseñas",
+            yaxis2_title="Sentimiento Promedio (VADER)",
+            height=500
+        )
+        fig.update_yaxes(title_text="Número de Reseñas", secondary_y=False)
+        fig.update_yaxes(title_text="Sentimiento Promedio", secondary_y=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("""
+        <div class="info-box">
+        <b>Descripción:</b> Gráfico combinado que muestra la actividad y el sentimiento promedio de las reseñas por día de la semana. Las barras indican el número de reseñas, mientras que la línea muestra el sentimiento promedio (calculado con VADER).<br>
+        <b>Información Adicional:</b><br>
+        - Período de análisis: Semanal (por día)<br>
+        - Método de análisis de sentimiento: VADER
+        </div>
+        """, unsafe_allow_html=True)
 
 # Pie de página
 st.markdown("---")

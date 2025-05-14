@@ -324,7 +324,7 @@ with tabs[0]:
                             colorbar=dict(title="Precio (€)")
                         ),
                         text=map_data.apply(
-                            lambda row: f"Nombre: {row.get('name', 'N/A')}<br>"
+                            lambda row: 
                                         f"Precio: €{row.get('price', 0):.2f}<br>"
                                         f"Tipo: {row.get('room_type', 'N/A')}<br>"
                                         f"Puntuación: {row.get('review_scores_rating', 0):.1f}",

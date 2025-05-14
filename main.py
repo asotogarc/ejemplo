@@ -753,10 +753,15 @@ with tabs[3]:
             plot_data = filtered_data.dropna(subset=["host_response_rate"]).copy()
             if len(plot_data) > 0:
                 try:
+                    # Convertir tasa de respuesta a porcentaje (si no está en 0-100)
+                    if plot_data["host_response_rate"].max() <= 1:
+                        plot_data["host_response_rate"] = plot_data["host_response_rate"] * 100
                     # Crear rangos de tasa de respuesta
-                    bins = [0, 0.5, 0.8, 0.95, 1.0]
+                    bins = [0, 50, 80, 95, 100]
                     labels = ["0-50%", "50-80%", "80-95%", "95-100%"]
-                    plot_data["response_range"] = pd.cut(plot_data["host_response_rate"], bins=bins, labels=labels, include_lowest=True)
+                    plot_data["response_range"] = pd.cut(
+                        plot_data["host_response_rate"], bins=bins, labels=labels, include_lowest=True
+                    )
                     # Contar alojamientos por rango
                     response_counts = plot_data["response_range"].value_counts().sort_index()
                     # Filtrar rangos con suficientes datos (mínimo 5 puntos)
@@ -767,43 +772,40 @@ with tabs[3]:
                     if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
                         # Recalcular conteos
                         response_counts_filtered = plot_data_filtered["response_range"].value_counts().sort_index()
-                        # Crear datos para gráfico de barras apiladas
-                        bar_data = pd.DataFrame({
+                        # Preparar datos para gráfico de dona
+                        donut_data = pd.DataFrame({
                             "Rango": response_counts_filtered.index,
                             "Conteo": response_counts_filtered.values
                         })
-                        # Crear gráfico de barras apiladas
-                        fig = go.Figure()
-                        for i, (rango, conteo) in enumerate(zip(bar_data["Rango"], bar_data["Conteo"])):
-                            fig.add_trace(
-                                go.Bar(
-                                    x=["Tasa de Respuesta"],
-                                    y=[conteo],
-                                    name=rango,
-                                    marker_color=["#FF5A5F", "#00A699", "#484848", "#767676"][i % 4],
-                                    text=[f"{conteo} ({conteo/sum(bar_data['Conteo'])*100:.1f}%)"],
-                                    textposition="inside"
-                                )
-                            )
-                        # Actualizar diseño
+                        # Crear gráfico de dona
+                        fig = px.pie(
+                            donut_data,
+                            names="Rango",
+                            values="Conteo",
+                            title="Proporción de Anfitriones por Tasa de Respuesta",
+                            hole=0.4,  # Efecto dona
+                            color_discrete_sequence=["#FF5A5F", "#00A699", "#484848", "#767676"]
+                        )
+                        fig.update_traces(
+                            textinfo="percent+label",
+                            textposition="inside",
+                            textfont=dict(color="white"),
+                            hovertemplate="%{label}: %{value} anfitriones (%{percent})"
+                        )
                         fig.update_layout(
-                            barmode="stack",
-                            xaxis_title="",
-                            yaxis_title="Número de Anfitriones",
-                            title=dict(text="Distribución de la Tasa de Respuesta del Anfitrión", font=dict(color="white"), x=0.5),
+                            title=dict(text="Proporción de Anfitriones por Tasa de Respuesta", font=dict(color="white"), x=0.5),
                             showlegend=True,
                             height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
-                            margin=dict(t=100, b=50, l=50, r=50),
-                            xaxis=dict(showticklabels=False)
+                            margin=dict(t=100, b=50, l=50, r=50)
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     else:
-                        st.warning("No hay rangos de tasa de respuesta con suficientes datos para mostrar el gráfico.")
+                        st.warning("No hay rangos de tasa de respuesta con suficientes datos (mínimo 5 puntos por rango).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de barras apiladas: {e}")
-                    st.write("Valores únicos en 'host_response_rate':", plot_data["host_response_rate"].describe())
+                    st.error(f"Error al generar el gráfico de dona: {str(e)}")
+                    st.write("Estadísticas de 'host_response_rate':", plot_data["host_response_rate"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:

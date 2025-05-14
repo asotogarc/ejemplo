@@ -1404,31 +1404,29 @@ with tabs[4]:
                     if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
                         # Recalcular conteos
                         checkin_counts_filtered = plot_data_filtered["checkin_range"].value_counts().sort_index()
-                        # Preparar datos para gráfico de anillos concéntricos
-                        ring_data = pd.DataFrame({
+                        # Preparar datos para gráfico de dona
+                        donut_data = pd.DataFrame({
                             "Rango": checkin_counts_filtered.index,
                             "Conteo": checkin_counts_filtered.values
                         })
-                        # Crear gráfico de anillos concéntricos
-                        fig = go.Figure()
-                        for i, row in ring_data.iterrows():
-                            fig.add_trace(
-                                go.Pie(
-                                    labels=[row["Rango"]],
-                                    values=[row["Conteo"]],
-                                    hole=0.3 + i * 0.1,
-                                    marker_colors=[["#FF5A5F", "#00A699", "#484848"][i % 3]],
-                                    textinfo="percent+label",
-                                    textposition="inside",
-                                    textfont=dict(color="white"),
-                                    hovertemplate="%{label}: %{value} alojamientos (%{percent})",
-                                    showlegend=False
-                                )
-                            )
-                        # Actualizar diseño
+                        # Crear gráfico de dona
+                        fig = px.pie(
+                            donut_data,
+                            names="Rango",
+                            values="Conteo",
+                            title="Proporción de Alojamientos por Puntuación de Check-in",
+                            hole=0.4,
+                            color_discrete_sequence=["#FF5A5F", "#00A699", "#484848"]
+                        )
+                        fig.update_traces(
+                            textinfo="percent+label",
+                            textposition="inside",
+                            textfont=dict(color="white", size=14),
+                            hovertemplate="%{label}: %{value} alojamientos (%{percent})"
+                        )
                         fig.update_layout(
-                            title=dict(text="Distribución de la Puntuación de Check-in", font=dict(color="white"), x=0.5),
-                            showlegend=False,
+                            title=dict(text="Proporción de Alojamientos por Puntuación de Check-in", font=dict(color="white"), x=0.5),
+                            showlegend=True,
                             height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
@@ -1438,7 +1436,7 @@ with tabs[4]:
                     else:
                         st.warning("No hay rangos de puntuación de check-in con suficientes datos (mínimo 5 puntos por rango).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de anillos concéntricos: {str(e)}")
+                    st.error(f"Error al generar el gráfico de dona: {str(e)}")
                     st.write("Estadísticas de 'review_scores_checkin':", plot_data["review_scores_checkin"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")

@@ -1403,31 +1403,31 @@ with tabs[5]:
             plot_data = filtered_data.dropna(subset=["minimum_nights"]).copy()
             if len(plot_data) > 0:
                 try:
-                    # Filtrar valores extremos (>365 noches)
+                    # Filter extreme values (>365 nights)
                     plot_data = plot_data[plot_data["minimum_nights"] <= 365]
-                    # Calcular mediana
+                    # Calculate median
                     median_nights = plot_data["minimum_nights"].median()
-                    # Crear rangos de noches mínimas
+                    # Create ranges for minimum nights
                     bins = [0, 2, 7, 365]
                     labels = ["1-2 noches", "3-7 noches", ">7 noches"]
                     plot_data["min_nights_range"] = pd.cut(
                         plot_data["minimum_nights"], bins=bins, labels=labels, include_lowest=True
                     )
-                    # Calcular proporciones y conteos
+                    # Calculate proportions and counts
                     min_nights_counts = plot_data["min_nights_range"].value_counts().sort_index()
                     min_nights_data = pd.DataFrame({
                         "Rango": min_nights_counts.index,
                         "Conteo": min_nights_counts.values,
                         "Porcentaje": (min_nights_counts / min_nights_counts.sum() * 100).values
                     })
-                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    # Filter ranges with sufficient data (minimum 5 points)
                     min_points = 5
                     min_nights_data = min_nights_data[min_nights_data["Conteo"] >= min_points]
                     
                     if len(min_nights_data) > 0:
-                        # Crear gráfico de dona
+                        # Create donut chart
                         fig = go.Figure()
-                        # Dona principal
+                        # Main donut
                         fig.add_trace(
                             go.Pie(
                                 values=min_nights_data["Porcentaje"],
@@ -1435,7 +1435,7 @@ with tabs[5]:
                                 hole=0.5,
                                 marker=dict(
                                     colors=["#FF5A5F", "#00A699", "#484848"],
-                                    line=dict(color="white", width=2)  # Bordes blancos para mayor contraste
+                                    line=dict(color="white", width=2)  # White borders for contrast
                                 ),
                                 textinfo="percent+label",
                                 textposition="inside",
@@ -1445,7 +1445,7 @@ with tabs[5]:
                                 opacity=0.9
                             )
                         )
-                        # Círculo central para mediana
+                        # Central circle for median
                         fig.add_annotation(
                             x=0.5,
                             y=0.5,

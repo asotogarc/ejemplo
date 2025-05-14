@@ -1245,7 +1245,7 @@ with tabs[4]:
 
     with col2:
 
-        if "review_scores_location" in filtered_data.columns and "neighbourhood" in filtered_data.columns:
+        if "review_scores_location" in filtered_data.columns and "neighbourhood_cleansed" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["review_scores_location", "neighbourhood"]).copy()
             if len(plot_data) > 0:
                 try:

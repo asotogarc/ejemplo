@@ -1288,22 +1288,64 @@ with tabs[4]:
         
 
         if "review_scores_communication" in filtered_data.columns and "price" in filtered_data.columns:
-            plot_data = filtered_data.dropna(subset=["review_scores_communication", "price"]).sample(min(1000, len(filtered_data)))
+            plot_data = filtered_data.dropna(subset=["review_scores_communication", "price"]).copy()
             if len(plot_data) > 0:
-                fig = px.scatter(
-                    plot_data,
-                    x="review_scores_communication",
-                    y="price",
-                    labels={"review_scores_communication": "Puntuación de Comunicación", "price": "Precio (€)"},
-                    title="Relación entre Puntuación de Comunicación y Precio"
-                )
-                fig.update_layout(title=dict(text="Relación entre Puntuación de Comunicación y Precio", font=dict(color="white"), x=0.5))
-                st.plotly_chart(fig, use_container_width=True)
+                try:
+                    # Normalizar puntuaciones si están en escala 0-5 o 0-10
+                    max_score = plot_data["review_scores_communication"].max()
+                    if max_score <= 5:
+                        plot_data["review_scores_communication"] = plot_data["review_scores_communication"] * 20
+                    elif max_score <= 10:
+                        plot_data["review_scores_communication"] = plot_data["review_scores_communication"] * 10
+                    # Crear rangos de puntuación de comunicación
+                    bins = [0, 80, 90, 100]
+                    labels = ["0-80", "80-90", "90-100"]
+                    plot_data["comm_range"] = pd.cut(
+                        plot_data["review_scores_communication"], bins=bins, labels=labels, include_lowest=True
+                    )
+                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    category_counts = plot_data["comm_range"].value_counts()
+                    valid_ranges = category_counts[category_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["comm_range"].isin(valid_ranges)]
+                    
+                    if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
+                        # Calcular mediana de precios por rango
+                        line_data = plot_data_filtered.groupby("comm_range")["price"].median().reset_index()
+                        # Crear gráfico de líneas suavizadas
+                        fig = go.Figure()
+                        fig.add_trace(
+                            go.Scatter(
+                                x=line_data["comm_range"],
+                                y=line_data["price"],
+                                mode="lines+markers",
+                                line=dict(color="#FF5A5F", width=3, shape="spline"),
+                                marker=dict(size=10, color="#00A699", line=dict(width=1, color="#FFFFFF")),
+                                name="Precio Mediano"
+                            )
+                        )
+                        # Actualizar diseño
+                        fig.update_layout(
+                            xaxis_title="Puntuación de Comunicación",
+                            yaxis_title="Precio Mediano (€)",
+                            title=dict(text="Relación entre Puntuación de Comunicación y Precio", font=dict(color="white"), x=0.5),
+                            yaxis=dict(range=[0, line_data["price"].quantile(0.95) * 1.2]),
+                            showlegend=False,
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("No hay rangos de puntuación de comunicación con suficientes datos (mínimo 5 puntos por rango).")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de líneas: {str(e)}")
+                    st.write("Estadísticas de 'review_scores_communication':", plot_data["review_scores_communication"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
-            st.info("Faltan las columnas 'review_scores_communication' o 'price'.")
-        
+            st.info("Faltan las columnas 'review_scores_communication' o 'price'.")        
         
         
         if "review_scores_checkin" in filtered_data.columns:

@@ -1203,92 +1203,99 @@ with tabs[4]:
                     plot_data["high_range"] = pd.cut(
                         plot_data["review_scores_cleanliness"], bins=bins, labels=["90-100"], include_lowest=False
                     )
-                    petal_data = plot_data.groupby("room_type").agg(
+                    thermo_data = plot_data.groupby("room_type").agg(
                         median_cleanliness=("review_scores_cleanliness", "median"),
                         count=("review_scores_cleanliness", "count"),
                         high_percentage=("high_range", lambda x: (x.count() / len(x) * 100) if len(x) > 0 else 0)
                     ).reset_index()
                     # Filtrar tipos de habitación con suficientes datos (mínimo 5 puntos)
                     min_points = 5
-                    petal_data = petal_data[petal_data["count"] >= min_points]
+                    thermo_data = thermo_data[thermo_data["count"] >= min_points]
                     
-                    if len(petal_data) > 0:
-                        # Normalizar tamaños de pétalos (ancho según conteo)
-                        max_count = petal_data["count"].max()
-                        petal_data["width"] = petal_data["count"] / max_count * 0.4  # Escala de ancho
-                        # Crear gráfico de pétalos
+                    if len(thermo_data) > 0:
+                        # Normalizar anchos de termómetros (según conteo)
+                        max_count = thermo_data["count"].max()
+                        thermo_data["width"] = thermo_data["count"] / max_count * 0.2  # Escala de ancho
+                        # Calcular colores según high_percentage
+                        thermo_data["color"] = thermo_data["high_percentage"].apply(
+                            lambda x: f"rgb({int(255 * x / 100)}, {int(165 - 165 * x / 100)}, {int(95 * x / 100)})"
+                        )
+                        # Crear gráfico de termómetros
                         fig = go.Figure()
-                        colors = ["#FF5A5F", "#00A699", "#484848", "#767676"]
-                        n_types = len(petal_data)
-                        theta_step = 360 / n_types  # Ángulo entre pétalos
-                        for i, row in petal_data.iterrows():
-                            # Definir coordenadas del pétalo
-                            theta = [i * theta_step - row["width"] * 18, i * theta_step, i * theta_step + row["width"] * 18]
-                            r = [0, row["median_cleanliness"], 0]
-                            # Añadir pétalo
-                            fig.add_trace(
-                                go.Scatterpolar(
-                                    r=r,
-                                    theta=theta,
-                                    mode="lines+markers",
-                                    fill="toself",
-                                    fillcolor=colors[i % len(colors)],
-                                    line_color=colors[i % len(colors)],
-                                    line_width=1,
-                                    marker=dict(size=5, color="white"),
-                                    name=row["room_type"],
-                                    hoverinfo="text",
-                                    hovertext=f"{row['room_type']}: Mediana {row['median_cleanliness']:.1f}, "
-                                             f"{row['high_percentage']:.1f}% en 90-100, {int(row['count'])} alojamientos"
-                                )
+                        for i, row in thermo_data.iterrows():
+                            # Termómetro (rectángulo)
+                            fig.add_shape(
+                                type="rect",
+                                x0=i - row["width"], x1=i + row["width"],
+                                y0=0, y1=row["median_cleanliness"],
+                                fillcolor=row["color"],
+                                line=dict(color="white", width=1),
+                                opacity=0.8
                             )
-                            # Añadir etiqueta en el pétalo
-                            label_theta = i * theta_step
-                            label_r = row["median_cleanliness"] * 0.6  # Posición intermedia
+                            # Línea de mediana
+                            fig.add_shape(
+                                type="line",
+                                x0=i - row["width"] * 0.8, x1=i + row["width"] * 0.8,
+                                y0=row["median_cleanliness"], y1=row["median_cleanliness"],
+                                line=dict(color="white", width=2)
+                            )
+                            # Etiqueta flotante
                             fig.add_annotation(
-                                x=label_r * np.cos(np.radians(label_theta)),
-                                y=label_r * np.sin(np.radians(label_theta)),
-                                xref="paper",
-                                yref="paper",
+                                x=i,
+                                y=row["median_cleanliness"] + 5,
                                 text=f"{row['room_type']}<br>{row['median_cleanliness']:.1f}<br>{row['high_percentage']:.1f}%",
                                 showarrow=False,
                                 font=dict(color="white", size=10),
-                                bgcolor=colors[i % len(colors)],
+                                bgcolor=row["color"],
                                 bordercolor="white",
-                                borderwidth=1
+                                borderwidth=1,
+                                yanchor="bottom"
                             )
                         # Actualizar diseño
                         fig.update_layout(
-                            polar=dict(
-                                radialaxis=dict(
-                                    visible=True,
-                                    range=[0, 100],
-                                    tickvals=[0, 20, 40, 60, 80, 100],
-                                    ticktext=["0", "20", "40", "60", "80", "100"]
-                                ),
-                                angularaxis=dict(
-                                    rotation=90,
-                                    direction="clockwise",
-                                    showticklabels=False
-                                )
+                            xaxis=dict(
+                                tickmode="array",
+                                tickvals=list(range(len(thermo_data))),
+                                ticktext=thermo_data["room_type"].tolist(),
+                                title="Tipo de Habitación",
+                                showgrid=False
+                            ),
+                            yaxis=dict(
+                                title="Puntuación de Limpieza (0-100)",
+                                range=[0, 110],  # Espacio para etiquetas
+                                showgrid=True,
+                                gridcolor="rgba(255,255,255,0.2)"
                             ),
                             title=dict(
                                 text="Puntuación de Limpieza por Tipo de Habitación",
                                 font=dict(color="white"),
                                 x=0.5
                             ),
-                            showlegend=True,
-                            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
-                            height=600,
+                            showlegend=False,
+                            height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
-                            margin=dict(t=100, b=100, l=50, r=50)
+                            margin=dict(t=100, b=50, l=50, r=50),
+                            shapes=[  # Fondo estilizado (opcional)
+                                dict(
+                                    type="rect",
+                                    x0=-0.5, x1=len(thermo_data)-0.5,
+                                    y0=0, y1=100,
+                                    fillcolor="rgba(255,255,255,0.1)",
+                                    line_width=0,
+                                    layer="below"
+                                )
+                            ]
+                        )
+                        # Añadir animaciones sutiles (transiciones)
+                        fig.update_traces(
+                            transitions=[dict(duration=500, easing="cubic-in-out")]
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     else:
                         st.warning("No hay tipos de habitación con suficientes datos (mínimo 5 puntos por tipo).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de pétalos: {str(e)}")
+                    st.error(f"Error al generar el gráfico de termómetros: {str(e)}")
                     st.write("Estadísticas de 'review_scores_cleanliness':", plot_data["review_scores_cleanliness"].describe())
                     st.write("Tipos de habitación únicos:", plot_data["room_type"].unique())
             else:

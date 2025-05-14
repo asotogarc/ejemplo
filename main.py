@@ -1189,28 +1189,58 @@ with tabs[4]:
         
 
         if "review_scores_cleanliness" in filtered_data.columns and "room_type" in filtered_data.columns:
-            plot_data = filtered_data.dropna(subset=["review_scores_cleanliness", "room_type"])
+            plot_data = filtered_data.dropna(subset=["review_scores_cleanliness", "room_type"]).copy()
             if len(plot_data) > 0:
-                min_points = 1
-                category_counts = plot_data["room_type"].value_counts()
-                valid_categories = category_counts[category_counts >= min_points].index.tolist()
-                if valid_categories:
-                    plot_data_filtered = plot_data[plot_data["room_type"].isin(valid_categories)]
-                    try:
-                        fig = px.box(
-                            plot_data_filtered,
-                            x="room_type",
-                            y="review_scores_cleanliness",
-                            labels={"room_type": "Tipo de Habitación", "review_scores_cleanliness": "Puntuación de Limpieza"},
-                            title="Puntuación de Limpieza según Tipo de Habitación"
+                try:
+                    # Normalizar puntuaciones si están en escala 0-5 o 0-10
+                    max_score = plot_data["review_scores_cleanliness"].max()
+                    if max_score <= 5:
+                        plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 20
+                    elif max_score <= 10:
+                        plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 10
+                    # Calcular puntuación promedio por tipo de habitación
+                    cleanliness_scores = plot_data.groupby("room_type")["review_scores_cleanliness"].agg(
+                        mean="mean",
+                        count="count"
+                    ).reset_index()
+                    # Filtrar tipos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    cleanliness_scores = cleanliness_scores[cleanliness_scores["count"] >= min_points]
+                    
+                    if len(cleanliness_scores) > 0:
+                        # Crear gráfico de radar
+                        fig = go.Figure()
+                        for i, room_type in enumerate(cleanliness_scores["room_type"]):
+                            score = cleanliness_scores[cleanliness_scores["room_type"] == room_type]["mean"].iloc[0]
+                            fig.add_trace(
+                                go.Scatterpolar(
+                                    r=[score, score],
+                                    theta=[room_type, room_type],
+                                    mode="lines+markers",
+                                    line=dict(color=["#FF5A5F", "#00A699", "#484848", "#767676"][i % 4], width=2),
+                                    marker=dict(size=10),
+                                    name=room_type
+                                )
+                            )
+                        # Actualizar diseño
+                        fig.update_layout(
+                            polar=dict(
+                                radialaxis=dict(visible=True, range=[0, 100]),
+                                angularaxis=dict(direction="clockwise")
+                            ),
+                            title=dict(text="Puntuación de Limpieza por Tipo de Habitación", font=dict(color="white"), x=0.5),
+                            showlegend=True,
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
                         )
-                        fig.update_layout(title=dict(text="Puntuación de Limpieza según Tipo de Habitación", font=dict(color="white"), x=0.5))
                         st.plotly_chart(fig, use_container_width=True)
-                    except Exception as e:
-                        st.error(f"Error al generar el gráfico de caja: {e}")
-                        st.write("Valores únicos en 'room_type':", plot_data_filtered["room_type"].unique())
-                else:
-                    st.warning("No hay tipos de habitación con suficientes datos para mostrar el gráfico.")
+                    else:
+                        st.warning("No hay tipos de habitación con suficientes datos (mínimo 5 puntos por tipo).")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de radar: {str(e)}")
+                    st.write("Estadísticas de 'review_scores_cleanliness':", plot_data["review_scores_cleanliness"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:

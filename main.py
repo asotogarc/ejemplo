@@ -645,18 +645,52 @@ with tabs[2]:
             st.info("Faltan las columnas 'accommodates' o 'price'.")        
         
         
-        if "beds" in filtered_data.columns:
-            fig = px.histogram(
-                filtered_data,
-                x="beds",
-                nbins=20,
-                labels={"beds": "Número de Camas"},
-                title="Distribución del Número de Camas"
-            )
-            fig.update_layout(title=dict(text="Distribución del Número de Camas", font=dict(color="white"), x=0.5))
-            st.plotly_chart(fig, use_container_width=True)
+        if "beds" in filtered_data.columns and "price" in filtered_data.columns:
+            plot_data = filtered_data.dropna(subset=["beds", "price"]).copy()
+            if len(plot_data) > 0:
+                # Limitar el número de camas a un máximo razonable (por ejemplo, 10) y agrupar valores mayores
+                plot_data["beds"] = plot_data["beds"].clip(upper=10)
+                # Filtrar valores con suficientes datos (mínimo 5 puntos)
+                min_points = 5
+                category_counts = plot_data["beds"].value_counts()
+                valid_beds = category_counts[category_counts >= min_points].index.tolist()
+                plot_data_filtered = plot_data[plot_data["beds"].isin(valid_beds)]
+                
+                if len(plot_data_filtered) > 0 and len(valid_beds) > 0:
+                    try:
+                        # Crear gráfico de violín
+                        fig = px.violin(
+                            plot_data_filtered,
+                            x="beds",
+                            y="price",
+                            box=True,  # Incluir caja dentro del violín para mostrar mediana y cuartiles
+                            points=False,  # No mostrar puntos individuales para mantener claridad
+                            labels={"beds": "Número de Camas", "price": "Precio (€)"},
+                            title="Distribución de Precios por Número de Camas"
+                        )
+                        fig.update_traces(
+                            fillcolor='rgba(255, 90, 95, 0.2)',  # Color suave para los violines
+                            line_color='#FF5A5F',
+                            line_width=2
+                        )
+                        fig.update_layout(
+                            xaxis_title="Número de Camas",
+                            yaxis_title="Precio (€)",
+                            title=dict(text="Distribución de Precios por Número de Camas", font=dict(color="white"), x=0.5),
+                            xaxis=dict(tickmode="linear", dtick=1),  # Asegurar etiquetas enteras
+                            yaxis=dict(range=[0, plot_data_filtered["price"].quantile(0.95)]),  # Limitar eje Y
+                            showlegend=False
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error al generar el gráfico de violín: {e}")
+                        st.write("Valores únicos en 'beds':", plot_data_filtered["beds"].unique())
+                else:
+                    st.warning("No hay valores de número de camas con suficientes datos para mostrar el gráfico.")
+            else:
+                st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
-            st.info("La columna 'beds' no está disponible.")
+            st.info("Faltan las columnas 'beds' o 'price'.")
         
         
         

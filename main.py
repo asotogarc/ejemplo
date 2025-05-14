@@ -289,7 +289,7 @@ tabs = st.tabs([
     "Análisis de Precios",
     "Características del Alojamiento",
     "Características del Anfitrión",
-    "Análisis de Reseñas",
+    "Puntuación, Limpieza y Ubicación",
     "Características temporales"
 ])
 

@@ -1443,90 +1443,37 @@ if "maximum_nights" in filtered_data.columns:
     plot_data = filtered_data.dropna(subset=["maximum_nights"]).copy()
     if len(plot_data) > 0:
         try:
-            # Clip extreme values (>1125 as "no limit")
+            # Tratar valores extremos (>1125 como "sin límite")
             plot_data["maximum_nights"] = plot_data["maximum_nights"].clip(upper=1125)
-            # Calculate median
+            # Calcular mediana y moda
             median_nights = plot_data["maximum_nights"].median()
-            # Create ranges for maximum nights
+            mode_nights = plot_data["maximum_nights"].mode()[0]
+            # Crear rangos de noches máximas
             bins = [0, 30, 365, 1125]
             labels = ["≤30 noches", "31-365 noches", ">365 noches"]
             plot_data["max_nights_range"] = pd.cut(
                 plot_data["maximum_nights"], bins=bins, labels=labels, include_lowest=True
             )
-            # Calculate proportions and counts
-            max_nights_counts = plot_data["max_nights_range"].value_counts().sort_index()
-            max_nights_data = pd.DataFrame({
-                "Rango": max_nights_counts.index,
-                "Conteo": max_nights_counts.values,
-                "Porcentaje": (max_nights_counts / max_nights_counts.sum() * 100).values
-            })
-            # Filter ranges with sufficient data (minimum 5 points)
-            min_points = 5
-            max_nights_data = max_nights_data[max_nights_data["Conteo"] >= min_points]
-            
-            if len(max_nights_data) > 0:
-                # Create concentric rings chart
-                fig = go.Figure()
-                base_hole = 0.3  # Starting hole size
-                for i, row in max_nights_data.iterrows():
-                    # Each ring's thickness is proportional to percentage
-                    thickness = row["Porcentaje"] / 100 * 0.2  # Scale thickness
-                    fig.add_trace(
-                        go.Pie(
-                            values=[row["Porcentaje"], 100 - row["Porcentaje"]],
-                            labels=[row["Rango"], ""],
-                            hole=base_hole + (i * 0.1),
-                            marker=dict(
-                                colors=[["#FF5A5F", "#00A699", "#484848"][i], "rgba(0,0,0,0)"],
-                                line=dict(color="white", width=2)
-                            ),
-                            textinfo="none",
-                            hovertemplate="%{label}: %{value:.1f}% (%{customdata} alojamientos)",
-                            customdata=[row["Conteo"], 0],
-                            opacity=0.9,
-                            showlegend=(i == 0)  # Show legend only for first ring
-                        )
-                    )
-                # Add percentage labels as annotations
-                for i, row in max_nights_data.iterrows():
-                    fig.add_annotation(
-                        x=0.5,
-                        y=0.5,
-                        text=f"{row['Rango']}: {row['Porcentaje']:.1f}%",
-                        showarrow=False,
-                        font=dict(color="white", size=10),
-                        yshift=-(i * 30) - 20,
-                        xanchor="center",
-                        yanchor="middle"
-                    )
-                # Central text for median
-                fig.add_annotation(
-                    x=0.5,
-                    y=0.5,
-                    text=f"Mediana<br>{median_nights:.0f} noches",
-                    showarrow=False,
-                    font=dict(color="white", size=14),
-                    bgcolor="#767676",
-                    bordercolor="white",
-                    borderwidth=1
-                )
-                fig.update_layout(
-                    title=dict(text="Distribución de Noches Máximas Permitidas", font=dict(color="white"), x=0.5),
-                    showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
-                    height=400,
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    margin=dict(t=100, b=100, l=50, r=50)
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.warning("No hay rangos de noches máximas con suficientes datos (mínimo 5 puntos por rango).")
+            # Calcular porcentajes
+            percentages = plot_data["max_nights_range"].value_counts(normalize=True) * 100
+            # Generar output textual
+            text_output = (
+                f"**Distribución de Noches Máximas Permitidas**\n\n"
+                f"- **Mediana**: {median_nights:.0f} noches\n"
+                f"- **Moda**: {mode_nights:.0f} noches\n"
+                f"- **Distribución**:\n"
+                f"  - ≤30 noches: {percentages.get('≤30 noches', 0):.1f}%\n"
+                f"  - 31-365 noches: {percentages.get('31-365 noches', 0):.1f}%\n"
+                f"  - >365 noches: {percentages.get('>365 noches', 0):.1f}%"
+            )
+            st.markdown(text_output)
         except Exception as e:
-            st.error(f"Error al generar el gráfico de anillos: {str(e)}")
+            st.error(f"Error al generar el resumen: {str(e)}")
             st.write("Estadísticas de 'maximum_nights':", plot_data["maximum_nights"].describe())
     else:
-        st.warning("No hay datos suficientes para mostrar el gráfico.")
+        st.warning("No hay datos suficientes para mostrar el resumen.")
+else:
+    st.info("La columna 'maximum_nights' no está disponible.")
 
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
 

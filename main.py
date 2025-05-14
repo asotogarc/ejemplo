@@ -491,43 +491,6 @@ with tabs[1]:
         
         
 
-       if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
-            plot_data = filtered_data.dropna(subset=["room_type", "price"]).copy()
-            if len(plot_data) > 0:
-                # Obtener categorías válidas después de filtrar
-                min_points = 1  # Mínimo número de puntos por categoría
-                category_counts = plot_data["room_type"].value_counts()
-                valid_categories = category_counts[category_counts >= min_points].index.tolist()
-                if valid_categories:
-                    plot_data_filtered = plot_data[plot_data["room_type"].isin(valid_categories)]
-                    try:
-                        fig = px.box(
-                            plot_data_filtered,
-                            x="room_type",
-                            y="price",
-                            color="room_type",
-                            labels={"price": "Precio (€)", "room_type": "Tipo de Habitación"},
-                            title="Distribución de Precios por Tipo de Habitación",
-                            category_orders={"room_type": sorted(valid_categories)},
-                            points="outliers"
-                        )
-                        fig.update_layout(
-                            xaxis={"categoryorder": "total descending"},
-                            showlegend=False,
-                            title=dict(text="Distribución de Precios por Tipo de Habitación", font=dict(color="white"), x=0.5)
-                        )
-                        # Limitar el eje Y para evitar valores extremos
-                        fig.update_yaxes(range=[0, plot_data_filtered["price"].quantile(0.95)])
-                        st.plotly_chart(fig, use_container_width=True)
-                    except Exception as e:
-                        st.error(f"Error al generar el gráfico de caja: {e}")
-                        st.write("Valores únicos en 'room_type':", plot_data_filtered["room_type"].unique())
-                else:
-                    st.warning("No hay tipos de habitación con suficientes datos para mostrar el gráfico.")
-            else:
-                st.warning("No hay datos suficientes para mostrar el gráfico.")
-        else:
-            st.info("Faltan las columnas 'room_type' o 'price'.")
         
         
         

@@ -895,50 +895,64 @@ with tabs[3]:
         if "host_listings_count" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["host_listings_count", "price"]).copy()
             if len(plot_data) > 0:
-                # Limitar número de listados a un máximo razonable (por ejemplo, 20) y agrupar valores mayores
-                plot_data["host_listings_count"] = plot_data["host_listings_count"].clip(upper=20)
-                # Filtrar valores con suficientes datos (mínimo 5 puntos)
-                min_points = 5
-                category_counts = plot_data["host_listings_count"].value_counts()
-                valid_listings = category_counts[category_counts >= min_points].index.tolist()
-                plot_data_filtered = plot_data[plot_data["host_listings_count"].isin(valid_listings)]
-                
-                if len(plot_data_filtered) > 0 and len(valid_listings) > 0:
-                    try:
-                        # Crear gráfico de violín
-                        fig = px.violin(
-                            plot_data_filtered,
-                            x="host_listings_count",
-                            y="price",
-                            box=True,  # Mostrar caja dentro del violín
-                            points=False,  # No mostrar puntos individuales
-                            labels={"host_listings_count": "Número de Listados", "price": "Precio (€)"},
-                            title="Distribución de Precios por Número de Listados"
-                        )
-                        # Añadir línea de tendencia (mediana)
-                        median_prices = plot_data_filtered.groupby("host_listings_count")["price"].median().reindex(valid_listings)
+                try:
+                    # Limitar número de listados a un máximo razonable (por ejemplo, 20)
+                    plot_data["host_listings_count"] = plot_data["host_listings_count"].clip(upper=20)
+                    # Filtrar valores con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    category_counts = plot_data["host_listings_count"].value_counts()
+                    valid_listings = category_counts[category_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["host_listings_count"].isin(valid_listings)]
+                    
+                    if len(plot_data_filtered) > 0 and len(valid_listings) > 0:
+                        # Calcular mediana y cuartiles por número de listados
+                        stats_data = plot_data_filtered.groupby("host_listings_count")["price"].agg(
+                            median="median",
+                            q25=lambda x: x.quantile(0.25),
+                            q75=lambda x: x.quantile(0.75)
+                        ).reindex(valid_listings)
+                        # Crear gráfico de líneas con bandas
+                        fig = go.Figure()
+                        # Banda de confianza (IQR)
                         fig.add_trace(
                             go.Scatter(
-                                x=median_prices.index,
-                                y=median_prices.values,
+                                x=stats_data.index,
+                                y=stats_data["q75"],
+                                mode="lines",
+                                line=dict(width=0),
+                                showlegend=False,
+                                fill=None
+                            )
+                        )
+                        fig.add_trace(
+                            go.Scatter(
+                                x=stats_data.index,
+                                y=stats_data["q25"],
+                                mode="lines",
+                                line=dict(width=0),
+                                fill="tonexty",
+                                fillcolor="rgba(255, 90, 95, 0.2)",
+                                showlegend=False
+                            )
+                        )
+                        # Línea de mediana
+                        fig.add_trace(
+                            go.Scatter(
+                                x=stats_data.index,
+                                y=stats_data["median"],
                                 mode="lines+markers",
-                                line=dict(color="#00A699", width=3),
-                                marker=dict(size=8),
+                                line=dict(color="#FF5A5F", width=3),
+                                marker=dict(size=8, color="#FF5A5F"),
                                 name="Mediana de Precio"
                             )
                         )
                         # Actualizar diseño
-                        fig.update_traces(
-                            fillcolor="rgba(255, 90, 95, 0.2)",
-                            line_color="#FF5A5F",
-                            line_width=2
-                        )
                         fig.update_layout(
                             xaxis_title="Número de Listados",
                             yaxis_title="Precio (€)",
-                            title=dict(text="Distribución de Precios por Número de Listados", font=dict(color="white"), x=0.5),
+                            title=dict(text="Tendencia de Precios por Número de Listados", font=dict(color="white"), x=0.5),
                             xaxis=dict(tickmode="linear", dtick=1),
-                            yaxis=dict(range=[0, plot_data_filtered["price"].quantile(0.95)]),
+                            yaxis=dict(range=[0, stats_data["q75"].max() * 1.1]),
                             showlegend=True,
                             height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
@@ -946,11 +960,11 @@ with tabs[3]:
                             margin=dict(t=100, b=50, l=50, r=50)
                         )
                         st.plotly_chart(fig, use_container_width=True)
-                    except Exception as e:
-                        st.error(f"Error al generar el gráfico de violín: {e}")
-                        st.write("Valores únicos en 'host_listings_count':", plot_data_filtered["host_listings_count"].unique())
-                else:
-                    st.warning("No hay valores de número de listados con suficientes datos para mostrar el gráfico.")
+                    else:
+                        st.warning("No hay valores de número de listados con suficientes datos para mostrar el gráfico.")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de líneas: {e}")
+                    st.write("Valores únicos en 'host_listings_count':", plot_data["host_listings_count"].unique())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:

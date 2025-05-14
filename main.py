@@ -95,13 +95,6 @@ st.markdown("""
 st.markdown('<div class="main-header">Análisis de Datos de Airbnb en España 2024</div>', unsafe_allow_html=True)
 col1, col2, col3 = st.columns([1, 6, 1])
 with col2:
-    st.markdown("""
-    <div class="info-box">
-    Bienvenido al dashboard interactivo para el análisis de datos de Airbnb en diferentes ciudades de España (2024).  
-    Este proyecto, parte de mi TFG, explora la <b>predicción de precios</b> mediante modelos de aprendizaje automático y el 
-    <b>análisis de reseñas</b> usando procesamiento de lenguaje natural.
-    </div>
-    """, unsafe_allow_html=True)
 st.markdown("<p style='text-align: right;'><i>Autor: Ángel Soto García - Grado en Ciencia de Datos - UOC</i></p>", unsafe_allow_html=True)
 
 # Diccionario de ciudades y URLs

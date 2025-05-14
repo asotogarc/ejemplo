@@ -38,7 +38,8 @@ ciudades_urls = {
     "Valencia": "https://raw.githubusercontent.com/asotogarc/TFG-UOC-CienciaDeDatos-062025/main/datasets/inmuebles_valencia.parquet"
 }# Sidebar para selección de ciudad y filtros (sin cambios)
 st.sidebar.header("Selección de Ciudad")
-ciudad_seleccionada = st.sidebar.selectbox("Selecciona una ciudad:", list(ciudades_urls.keys()))try:
+ciudad_seleccionada = st.sidebar.selectbox("Selecciona una ciudad:", list(ciudades_urls.keys()))
+try:
     data = pd.read_parquet(ciudades_urls[ciudad_seleccionada])
 except Exception as e:
     st.error(f"Error al cargar los datos de {ciudad_seleccionada}: {e}")

@@ -1461,7 +1461,7 @@ with tabs[5]:
         else:
             st.info("La columna 'minimum_nights' no está disponible.")
     
-    st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
     
     if "maximum_nights" in filtered_data.columns:
         fig = px.histogram(

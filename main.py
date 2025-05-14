@@ -95,7 +95,6 @@ st.markdown("""
 st.markdown('<div class="main-header">Análisis de Datos de Airbnb en España 2024</div>', unsafe_allow_html=True)
 col1, col2, col3 = st.columns([1, 6, 1])
 with col2:
-st.markdown("<p style='text-align: right;'><i>Autor: Ángel Soto García - Grado en Ciencia de Datos - UOC</i></p>", unsafe_allow_html=True)
 
 # Diccionario de ciudades y URLs
 ciudades_urls = {

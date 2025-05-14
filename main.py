@@ -432,18 +432,26 @@ with tabs[1]:
         if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["room_type", "price"])
             if len(plot_data) > 0:
-                fig = px.box(
-                    plot_data,
-                    x="room_type",
-                    y="price",
-                    color="room_type",
-                    labels={"price": "Precio (€)", "room_type": "Tipo de Habitación"},
-                    title="",
-                    category_orders={"room_type": sorted(plot_data["room_type"].unique())},
-                    points="outliers"
-                )
-                fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False)
-                st.plotly_chart(fig, use_container_width=True)
+                # Filtrar categorías con al menos 1 dato
+                min_points = 1
+                category_counts = plot_data["room_type"].value_counts()
+                valid_categories = category_counts[category_counts >= min_points].index
+                if len(valid_categories) > 0:
+                    plot_data_filtered = plot_data[plot_data["room_type"].isin(valid_categories)]
+                    fig = px.box(
+                        plot_data_filtered,
+                        x="room_type",
+                        y="price",
+                        color="room_type",
+                        labels={"price": "Precio (€)", "room_type": "Tipo de Habitación"},
+                        title="",
+                        category_orders={"room_type": sorted(plot_data_filtered["room_type"].unique())},
+                        points="outliers"
+                    )
+                    fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("No hay tipos de habitación con suficientes datos para mostrar el gráfico.")
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
@@ -488,14 +496,22 @@ with tabs[2]:
         if "bedrooms" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["bedrooms", "price"])
             if len(plot_data) > 0:
-                fig = px.box(
-                    plot_data,
-                    x="bedrooms",
-                    y="price",
-                    labels={"bedrooms": "Número de Habitaciones", "price": "Precio (€)"},
-                    title=""
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                # Filtrar categorías con al menos 1 dato
+                min_points = 1
+                category_counts = plot_data["bedrooms"].value_counts()
+                valid_categories = category_counts[category_counts >= min_points].index
+                if len(valid_categories) > 0:
+                    plot_data_filtered = plot_data[plot_data["bedrooms"].isin(valid_categories)]
+                    fig = px.box(
+                        plot_data_filtered,
+                        x="bedrooms",
+                        y="price",
+                        labels={"bedrooms": "Número de Habitaciones", "price": "Precio (€)"},
+                        title=""
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("No hay números de habitaciones con suficientes datos para mostrar el gráfico.")
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
@@ -577,7 +593,7 @@ with tabs[3]:
             st.info("La columna 'host_response_time' no está disponible.")
 
         st.markdown('<div class="section-header">Antigüedad del Anfitrión</div>', unsafe_allow_html=True)
-        if "host_age_years" in filtered_data.columns:
+        if "host_ageYears" in filtered_data.columns:
             fig = px.histogram(
                 filtered_data,
                 x="host_age_years",
@@ -675,14 +691,22 @@ with tabs[4]:
         if "review_scores_cleanliness" in filtered_data.columns and "room_type" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["review_scores_cleanliness", "room_type"])
             if len(plot_data) > 0:
-                fig = px.box(
-                    plot_data,
-                    x="room_type",
-                    y="review_scores_cleanliness",
-                    labels={"room_type": "Tipo de Habitación", "review_scores_cleanliness": "Puntuación de Limpieza"},
-                    title=""
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                # Filtrar categorías con al menos 1 dato
+                min_points = 1
+                category_counts = plot_data["room_type"].value_counts()
+                valid_categories = category_counts[category_counts >= min_points].index
+                if len(valid_categories) > 0:
+                    plot_data_filtered = plot_data[plot_data["room_type"].isin(valid_categories)]
+                    fig = px.box(
+                        plot_data_filtered,
+                        x="room_type",
+                        y="review_scores_cleanliness",
+                        labels={"room_type": "Tipo de Habitación", "review_scores_cleanliness": "Puntuación de Limpieza"},
+                        title=""
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("No hay tipos de habitación con suficientes datos para mostrar el gráfico.")
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
@@ -694,15 +718,23 @@ with tabs[4]:
             top_neighbourhoods = filtered_data["neighbourhood_cleansed"].value_counts().head(10).index
             plot_data = filtered_data[filtered_data["neighbourhood_cleansed"].isin(top_neighbourhoods)].dropna(subset=["review_scores_location"])
             if len(plot_data) > 0:
-                fig = px.box(
-                    plot_data,
-                    x="neighbourhood_cleansed",
-                    y="review_scores_location",
-                    labels={"neighbourhood_cleansed": "Vecindario", "review_scores_location": "Puntuación de Ubicación"},
-                    title=""
-                )
-                fig.update_layout(xaxis={"categoryorder": "total descending"})
-                st.plotly_chart(fig, use_container_width=True)
+                # Filtrar categorías con al menos 1 dato
+                min_points = 1
+                category_counts = plot_data["neighbourhood_cleansed"].value_counts()
+                valid_categories = category_counts[category_counts >= min_points].index
+                if len(valid_categories) > 0:
+                    plot_data_filtered = plot_data[plot_data["neighbourhood_cleansed"].isin(valid_categories)]
+                    fig = px.box(
+                        plot_data_filtered,
+                        x="neighbourhood_cleansed",
+                        y="review_scores_location",
+                        labels={"neighbourhood_cleansed": "Vecindario", "review_scores_location": "Puntuación de Ubicación"},
+                        title=""
+                    )
+                    fig.update_layout(xaxis={"categoryorder": "total descending"})
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("No hay vecindarios con suficientes datos para mostrar el gráfico.")
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:

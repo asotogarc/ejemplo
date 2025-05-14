@@ -1399,7 +1399,7 @@ with tabs[4]:
             st.info("La columna 'review_scores_checkin' no está disponible.")
 # Pestaña 6: Características temporales
 with tabs[5]:
-         if "minimum_nights" in filtered_data.columns:
+        if "minimum_nights" in filtered_data.columns:
                     plot_data = filtered_data.dropna(subset=["minimum_nights"]).copy()
                     if len(plot_data) > 0:
                         try:

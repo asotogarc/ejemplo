@@ -1504,8 +1504,9 @@ with tabs[6]:
     st.markdown('<div class="subheader">Características de Usuarios</div>', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 1])
 
+    # Columna 1: Resumen General y Clusters
     with col1:
-
+        # Resumen General de Reseñas
         st.markdown("""
         <div class="info-box">
         <h3>Resumen General de Reseñas</h3>
@@ -1520,8 +1521,7 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
 
-        
-
+        # Clusters de Reseñas
         st.markdown("""
         <div class="info-box">
         <h3>Cluster 0</h3>
@@ -1545,8 +1545,9 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
 
+    # Columna 2: Temas y Gráficos
     with col2:
-
+        # Temas Identificados
         st.markdown("""
         <div class="info-box">
         <h3>Temas Identificados</h3>
@@ -1560,18 +1561,13 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
 
-        
-
-
-        # Datos del gráfico
+        # Gráfico 1: Actividad y Sentimiento por Día de la Semana
         review_data = pd.DataFrame({
             "Día": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
             "review_id": [8257, 6485, 6278, 6228, 6607, 6539, 9606],
             "vader_compound": [0.776859, 0.783723, 0.776271, 0.773506, 0.775032, 0.776225, 0.764861]
         })
-        # Crear gráfico combinado
         fig = make_subplots(specs=[[{"secondary_y": True}]])
-        # Barras para el número de reseñas
         fig.add_trace(
             go.Bar(
                 x=review_data["Día"],
@@ -1581,7 +1577,6 @@ with tabs[6]:
             ),
             secondary_y=False
         )
-        # Línea para el sentimiento promedio
         fig.add_trace(
             go.Scatter(
                 x=review_data["Día"],
@@ -1591,12 +1586,11 @@ with tabs[6]:
             ),
             secondary_y=True
         )
-        # Actualizar diseño
         fig.update_layout(
             title=dict(text="Actividad y Sentimiento por Día de la Semana", font=dict(color="white"), x=0.5),
             xaxis_title="Día de la Semana",
             yaxis_title="Número de Reseñas",
-            yaxis2_title="Sentimiento Promedic",
+            yaxis2_title="Sentimiento Promedio",
             height=500
         )
         fig.update_yaxes(title_text="Número de Reseñas", secondary_y=False)
@@ -1612,9 +1606,7 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
 
-        
-
-        # Datos del gráfico de evolución del sentimiento
+        # Gráfico 2: Evolución del Sentimiento Promedio por Mes
         sentiment_data = pd.DataFrame({
             "year_month": [
                 "2011-01", "2011-04", "2011-05", "2011-06", "2011-07", "2011-08", "2011-09", "2011-11", "2011-12",
@@ -1659,9 +1651,7 @@ with tabs[6]:
                 0.440333, 0.698543
             ]
         })
-        # Convertir year_month a formato datetime para mejor manejo
         sentiment_data["year_month"] = pd.to_datetime(sentiment_data["year_month"], format="%Y-%m")
-        # Crear gráfico de líneas
         fig = px.line(
             sentiment_data,
             x="year_month",
@@ -1691,7 +1681,6 @@ with tabs[6]:
         - Método de análisis de sentimiento: VADER
         </div>
         """, unsafe_allow_html=True)
-
 # Pie de página
 st.markdown("---")
 st.markdown("TFG - Análisis de Precios y Reseñas en Airbnb | Ángel Soto García")

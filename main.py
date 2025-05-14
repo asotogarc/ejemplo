@@ -1590,7 +1590,7 @@ with tabs[6]:
         )
         fig_temas.update_traces(textposition="auto")
         fig_temas.update_layout(
-            xaxis_title="Cantidad de palabras",
+            xaxis_title="Recurrencia",
             yaxis_title="Tema",
             showlegend=False,
             title_x=0.5

@@ -980,9 +980,18 @@ with tabs[3]:
                             median_price=("price", "median"),
                             count=("price", "count")
                         ).reset_index()
-                        # Normalizar valores para colores y tamaños
-                        tile_data["color_value"] = tile_data["median_price"] / tile_data["median_price"].max()
+                        # Normalizar valores para tamaños y colores
                         tile_data["size"] = np.sqrt(tile_data["count"] / tile_data["count"].max()) * 80  # Escala ajustada
+                        # Asignar colores manualmente según precio mediano
+                        max_price = tile_data["median_price"].max()
+                        min_price = tile_data["median_price"].min()
+                        tile_data["color"] = tile_data["median_price"].apply(
+                            lambda x: (
+                                "#00A699" if x <= min_price + (max_price - min_price) / 3 else
+                                "#484848" if x <= min_price + 2 * (max_price - min_price) / 3 else
+                                "#FF5A5F"
+                            )
+                        )
                         # Ajustar posiciones Y para evitar superposición
                         tile_data["y_pos"] = 1 + (tile_data.index % 2) * 0.2 - 0.1  # Alternar posiciones Y
                         # Crear gráfico de mosaico
@@ -999,12 +1008,10 @@ with tabs[3]:
                                     mode="markers+text",
                                     marker=dict(
                                         size=row["size"],
-                                        color=row["median_price"],
-                                        colorscale=[[0, "#00A699"], [1, "#FF5A5F"]],
-                                        showscale=True,
-                                        colorbar=dict(title="Precio Mediano (€)"),
+                                        color=row["color"],
                                         opacity=0.9,
-                                        line=dict(width=1, color="#FFFFFF")
+                                        line=dict(width=1, color="#FFFFFF"),
+                                        showscale=False  # Eliminar barra de color
                                     ),
                                     text=[text],
                                     textposition="middle center",

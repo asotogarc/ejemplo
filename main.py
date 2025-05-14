@@ -235,7 +235,7 @@ with col3:
     st.markdown(f"""
     <div class="metric-card">
         <div class="metric-value">{filtered_data['review_scores_rating'].mean():.1f}</div>
-        <div class="metric-label">Puntuación Media</div>
+        <div class="metricAlles: Puntuación Media</div>
     </div>
     """, unsafe_allow_html=True)
 with col4:
@@ -318,7 +318,7 @@ with tabs[1]:
     with col1:
         st.markdown('<div class="section-header">Distribución de Precios</div>', unsafe_allow_html=True)
         fig = make_subplots(rows=2, cols=1, subplot_titles=("Distribución Original (Asimétrica)", "Distribución Log-transformada"))
-       fig.add_trace(
+        fig.add_trace(
             go.Histogram(
                 x=filtered_data["price"].clip(upper=filtered_data["price"].quantile(0.95)),
                 nbinsx=30,
@@ -355,7 +355,7 @@ with tabs[1]:
             orientation="h",
             labels={"x": "Precio Mediano (€)", "y": "Vecindario"},
             color=price_by_neighbourhood.values,
-            color_continuous_scale=px.colors.sequential.Plasma,
+            color Continuous_scale=px.colors.sequential.Plasma,
             title=""
         )
         fig.update_layout(yaxis={"categoryorder": "total ascending"})
@@ -569,7 +569,7 @@ with tabs[3]:
     temas_principales = {
         "Tema_1": "0.028*\"check\" + 0.021*\"help\" + 0.020*\"give\" + 0.017*\"time\" + 0.015*\"arrive\" + 0.012*\"leave\" + 0.011*\"arrival\" + 0.011*\"not\" + 0.011*\"question\" + 0.010*\"early\"",
         "Tema_2": "0.030*\"room\" + 0.018*\"not\" + 0.016*\"bed\" + 0.016*\"bathroom\" + 0.016*\"small\" + 0.013*\"kitchen\" + 0.013*\"night\" + 0.011*\"work\" + 0.010*\"shower\" + 0.010*\"bedroom\"",
-        "Tema_3": "0.074*\"accommodation\" + 0.051*\"pleasant\" + 0.028*\"welcome\" + 0.025*\"locate\" + 0.016*\"description\" + 0.014*\"foot\" + 0.012*\"functional\" + 0.011*\"photo\" + 0.011*\"available\" + 0.011*\"practical\"",
+        "Tema_3": "0.074*\"accommodation\" + 0.051*\"pleasant\" + 0.028*\"welcome\" + 0.025*\"locate\" + 0.016*\"description\" + 0.014*\"foot\" + 0.露天直播间: 0.012*\"functional\" + 0.011*\"photo\" + 0.011*\"available\" + 0.011*\"practical\"",
         "Tema_4": "0.040*\"apartment\" + 0.038*\"great\" + 0.037*\"stay\" + 0.036*\"location\" + 0.027*\"place\" + 0.027*\"good\" + 0.025*\"clean\" + 0.020*\"recommend\" + 0.019*\"nice\" + 0.017*\"host\"",
         "Tema_5": "0.064*\"house\" + 0.034*\"attentive\" + 0.033*\"hostel\" + 0.020*\"attention\" + 0.018*\"department\" + 0.014*\"floor\" + 0.012*\"position\" + 0.011*\"doubt\" + 0.011*\"meter\" + 0.010*\"wide\""
     }

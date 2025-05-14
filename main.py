@@ -1379,18 +1379,71 @@ with tabs[4]:
         
         
         if "review_scores_checkin" in filtered_data.columns:
-            fig = px.histogram(
-                filtered_data,
-                x="review_scores_checkin",
-                nbins=20,
-                labels={"review_scores_checkin": "Puntuación de Check-in"},
-                title="Distribución de la Puntuación de Check-in"
-            )
-            fig.update_layout(title=dict(text="Distribución de la Puntuación de Check-in", font=dict(color="white"), x=0.5))
-            st.plotly_chart(fig, use_container_width=True)
+            plot_data = filtered_data.dropna(subset=["review_scores_checkin"]).copy()
+            if len(plot_data) > 0:
+                try:
+                    # Normalizar puntuaciones si están en escala 0-5 o 0-10
+                    max_score = plot_data["review_scores_checkin"].max()
+                    if max_score <= 5:
+                        plot_data["review_scores_checkin"] = plot_data["review_scores_checkin"] * 20
+                    elif max_score <= 10:
+                        plot_data["review_scores_checkin"] = plot_data["review_scores_checkin"] * 10
+                    # Crear rangos de puntuación de check-in
+                    bins = [0, 80, 90, 100]
+                    labels = ["0-80", "80-90", "90-100"]
+                    plot_data["checkin_range"] = pd.cut(
+                        plot_data["review_scores_checkin"], bins=bins, labels=labels, include_lowest=True
+                    )
+                    # Contar alojamientos por rango
+                    checkin_counts = plot_data["checkin_range"].value_counts().sort_index()
+                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    valid_ranges = checkin_counts[checkin_counts >= min_points].index.tolist()
+                    plot_data_filtered = plot_data[plot_data["checkin_range"].isin(valid_ranges)]
+                    
+                    if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
+                        # Recalcular conteos
+                        checkin_counts_filtered = plot_data_filtered["checkin_range"].value_counts().sort_index()
+                        # Preparar datos para gráfico de anillos concéntricos
+                        ring_data = pd.DataFrame({
+                            "Rango": checkin_counts_filtered.index,
+                            "Conteo": checkin_counts_filtered.values
+                        })
+                        # Crear gráfico de anillos concéntricos
+                        fig = go.Figure()
+                        for i, row in ring_data.iterrows():
+                            fig.add_trace(
+                                go.Pie(
+                                    labels=[row["Rango"]],
+                                    values=[row["Conteo"]],
+                                    hole=0.3 + i * 0.1,
+                                    marker_colors=[["#FF5A5F", "#00A699", "#484848"][i % 3]],
+                                    textinfo="percent+label",
+                                    textposition="inside",
+                                    textfont=dict(color="white"),
+                                    hovertemplate="%{label}: %{value} alojamientos (%{percent})",
+                                    showlegend=False
+                                )
+                            )
+                        # Actualizar diseño
+                        fig.update_layout(
+                            title=dict(text="Distribución de la Puntuación de Check-in", font=dict(color="white"), x=0.5),
+                            showlegend=False,
+                            height=500,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=50, l=50, r=50)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("No hay rangos de puntuación de check-in con suficientes datos (mínimo 5 puntos por rango).")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de anillos concéntricos: {str(e)}")
+                    st.write("Estadísticas de 'review_scores_checkin':", plot_data["review_scores_checkin"].describe())
+            else:
+                st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("La columna 'review_scores_checkin' no está disponible.")
-
 # Pestaña 6: Características temporales
 with tabs[5]:
     if "minimum_nights" in filtered_data.columns:

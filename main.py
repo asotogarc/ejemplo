@@ -1203,91 +1203,74 @@ with tabs[4]:
                     plot_data["high_range"] = pd.cut(
                         plot_data["review_scores_cleanliness"], bins=bins, labels=["90-100"], include_lowest=False
                     )
-                    thermo_data = plot_data.groupby("room_type").agg(
+                    gauge_data = plot_data.groupby("room_type").agg(
                         median_cleanliness=("review_scores_cleanliness", "median"),
                         count=("review_scores_cleanliness", "count"),
                         high_percentage=("high_range", lambda x: (x.count() / len(x) * 100) if len(x) > 0 else 0)
                     ).reset_index()
                     # Filtrar tipos de habitación con suficientes datos (mínimo 5 puntos)
                     min_points = 5
-                    thermo_data = thermo_data[thermo_data["count"] >= min_points]
+                    gauge_data = gauge_data[gauge_data["count"] >= min_points]
                     
-                    if len(thermo_data) > 0:
-                        # Normalizar anchos de termómetros (según conteo)
-                        max_count = thermo_data["count"].max()
-                        thermo_data["width"] = thermo_data["count"] / max_count * 0.2  # Escala de ancho
+                    if len(gauge_data) > 0:
+                        # Normalizar tamaños de medidores (según conteo)
+                        max_count = gauge_data["count"].max()
+                        gauge_data["size"] = 0.8 + (gauge_data["count"] / max_count) * 0.4  # Escala de 0.8 a 1.2
                         # Calcular colores según high_percentage
-                        thermo_data["color"] = thermo_data["high_percentage"].apply(
+                        gauge_data["color"] = gauge_data["high_percentage"].apply(
                             lambda x: f"rgb({int(255 * x / 100)}, {int(165 - 165 * x / 100)}, {int(95 * x / 100)})"
                         )
-                        # Crear gráfico de termómetros
+                        # Crear gráfico de medidores radiales
                         fig = go.Figure()
-                        for i, row in thermo_data.iterrows():
-                            # Termómetro (rectángulo)
-                            fig.add_shape(
-                                type="rect",
-                                x0=i - row["width"], x1=i + row["width"],
-                                y0=0, y1=row["median_cleanliness"],
-                                fillcolor=row["color"],
-                                line=dict(color="white", width=1),
-                                opacity=0.8
-                            )
-                            # Línea de mediana
-                            fig.add_shape(
-                                type="line",
-                                x0=i - row["width"] * 0.8, x1=i + row["width"] * 0.8,
-                                y0=row["median_cleanliness"], y1=row["median_cleanliness"],
-                                line=dict(color="white", width=2)
-                            )
-                            # Etiqueta flotante
-                            fig.add_annotation(
-                                x=i,
-                                y=row["median_cleanliness"] + 5,
-                                text=f"{row['room_type']}<br>{row['median_cleanliness']:.1f}<br>{row['high_percentage']:.1f}%",
-                                showarrow=False,
-                                font=dict(color="white", size=10),
-                                bgcolor=row["color"],
-                                bordercolor="white",
-                                borderwidth=1,
-                                yanchor="bottom"
+                        for i, row in gauge_data.iterrows():
+                            # Medidor radial
+                            fig.add_trace(
+                                go.Indicator(
+                                    mode="gauge+number",
+                                    value=row["median_cleanliness"],
+                                    domain=dict(
+                                        x=[i / len(gauge_data), (i + 1) / len(gauge_data)],
+                                        y=[0.2, 0.8]
+                                    ),
+                                    gauge=dict(
+                                        axis=dict(range=[0, 100], tickcolor="white", tickfont=dict(color="white")),
+                                        bar=dict(color="rgba(0,0,0,0)"),  # Sin barra de progreso
+                                        bgcolor=row["color"],
+                                        bordercolor="white",
+                                        borderwidth=1,
+                                        shape="angular",
+                                        threshold=dict(
+                                            line=dict(color="white", width=4),
+                                            thickness=0.75,
+                                            value=row["median_cleanliness"]
+                                        )
+                                    ),
+                                    number=dict(
+                                        font=dict(color="white", size=20 * row["size"]),
+                                        suffix="",
+                                        valueformat=".1f"
+                                    ),
+                                    title=dict(
+                                        text=f"{row['room_type']}<br>{row['high_percentage']:.1f}% en 90-100",
+                                        font=dict(color="white", size=12)
+                                    )
+                                )
                             )
                         # Actualizar diseño
                         fig.update_layout(
-                            xaxis=dict(
-                                tickmode="array",
-                                tickvals=list(range(len(thermo_data))),
-                                ticktext=thermo_data["room_type"].tolist(),
-                                title="Tipo de Habitación",
-                                showgrid=False
-                            ),
-                            yaxis=dict(
-                                title="Puntuación de Limpieza (0-100)",
-                                range=[0, 110],  # Espacio para etiquetas
-                                showgrid=True,
-                                gridcolor="rgba(255,255,255,0.2)"
-                            ),
                             title=dict(
                                 text="Puntuación de Limpieza por Tipo de Habitación",
                                 font=dict(color="white"),
                                 x=0.5
                             ),
                             showlegend=False,
-                            height=500,
+                            height=400,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
                             margin=dict(t=100, b=50, l=50, r=50),
-                            shapes=[  # Fondo estilizado (opcional)
-                                dict(
-                                    type="rect",
-                                    x0=-0.5, x1=len(thermo_data)-0.5,
-                                    y0=0, y1=100,
-                                    fillcolor="rgba(255,255,255,0.1)",
-                                    line_width=0,
-                                    layer="below"
-                                )
-                            ]
+                            grid=dict(rows=1, columns=len(gauge_data))
                         )
-                        # Añadir animaciones sutiles (transiciones)
+                        # Añadir animaciones sutiles
                         fig.update_traces(
                             transitions=[dict(duration=500, easing="cubic-in-out")]
                         )
@@ -1295,7 +1278,7 @@ with tabs[4]:
                     else:
                         st.warning("No hay tipos de habitación con suficientes datos (mínimo 5 puntos por tipo).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de termómetros: {str(e)}")
+                    st.error(f"Error al generar el gráfico de medidores: {str(e)}")
                     st.write("Estadísticas de 'review_scores_cleanliness':", plot_data["review_scores_cleanliness"].describe())
                     st.write("Tipos de habitación únicos:", plot_data["room_type"].unique())
             else:

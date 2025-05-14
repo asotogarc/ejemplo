@@ -1399,6 +1399,49 @@ with tabs[4]:
             st.info("La columna 'review_scores_checkin' no está disponible.")
 # Pestaña 6: Características temporales
 with tabs[5]:
+    if "minimum_nights" in filtered_data.columns:
+        fig = px.histogram(
+            filtered_data,
+            x="minimum_nights",
+            nbins=30,
+            labels={"minimum_nights": "Noches Mínimas"},
+            title="Distribución de Noches Mínimas Requeridas"
+        )
+        fig.update_layout(title=dict(text="Distribución de Noches Mínimas Requeridas", font=dict(color="white"), x=0.5))
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("La columna 'minimum_nights' no está disponible.")
+
+st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+
+if "maximum_nights" in filtered_data.columns:
+    fig = px.histogram(
+        filtered_data,
+        x="maximum_nights",
+        nbins=30,
+        labels={"maximum_nights": "Noches Máximas"},
+        title="Distribución de Noches Máximas Permitidas"
+    )
+    fig.update_layout(title=dict(text="Distribución de Noches Máximas Permitidas", font=dict(color="white"), x=0.5))
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("La columna 'maximum_nights' no está disponible.")
+
+st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+if "last_scraped" in filtered_data.columns:
+    last_scraped_counts = filtered_data["last_scraped"].value_counts().sort_index()
+    fig = px.bar(
+        x=last_scraped_counts.index,
+        y=last_scraped_counts.values,
+        labels={"x": "Fecha de Recopilación", "y": "Número de Alojamientos"},
+        title="Frecuencia de Última Fecha de Recopilación de Datos"
+    )
+    fig.update_layout(title=dict(text="Frecuencia de Última Fecha de Recopilación de Datos", font=dict(color="white"), x=0.5))
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("La columna 'last_scraped' no está disponible.")
+
+
 
 
 # Pestaña 7: Características de Usuarios

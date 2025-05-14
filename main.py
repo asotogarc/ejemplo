@@ -1403,76 +1403,38 @@ with tabs[5]:
             plot_data = filtered_data.dropna(subset=["minimum_nights"]).copy()
             if len(plot_data) > 0:
                 try:
-                    # Filter extreme values (>365 nights)
+                    # Filtrar valores extremos (>365 noches)
                     plot_data = plot_data[plot_data["minimum_nights"] <= 365]
-                    # Calculate median
-                    median_nights = plot_data["minimum_nights"].median()
-                    # Create ranges for minimum nights
-                    bins = [0, 2, 7, 365]
-                    labels = ["1-2 noches", "3-7 noches", ">7 noches"]
-                    plot_data["min_nights_range"] = pd.cut(
-                        plot_data["minimum_nights"], bins=bins, labels=labels, include_lowest=True
-                    )
-                    # Calculate proportions and counts
-                    min_nights_counts = plot_data["min_nights_range"].value_counts().sort_index()
-                    min_nights_data = pd.DataFrame({
-                        "Rango": min_nights_counts.index,
-                        "Conteo": min_nights_counts.values,
-                        "Porcentaje": (min_nights_counts / min_nights_counts.sum() * 100).values
-                    })
-                    # Filter ranges with sufficient data (minimum 5 points)
-                    min_points = 5
-                    min_nights_data = min_nights_data[min_nights_data["Conteo"] >= min_points]
-                    
-                    if len(min_nights_data) > 0:
-                        # Create donut chart
-                        fig = go.Figure()
-                        # Main donut
-                        fig.add_trace(
-                            go.Pie(
-                                values=min_nights_data["Porcentaje"],
-                                labels=min_nights_data["Rango"],
-                                hole=0.5,
-                                marker=dict(
-                                    colors=["#FF5A5F", "#00A699", "#484848"],
-                                    line=dict(color="white", width=2)  # White borders for contrast
-                                ),
-                                textinfo="percent+label",
-                                textposition="inside",
-                                textfont=dict(color="white", size=12),
-                                hovertemplate="%{label}: %{value:.1f}% (%{customdata} alojamientos)",
-                                customdata=min_nights_data["Conteo"],
-                                opacity=0.9
-                            )
+                    if len(plot_data) > 0:
+                        # Calcular mediana y moda
+                        median_nights = plot_data["minimum_nights"].median()
+                        mode_nights = plot_data["minimum_nights"].mode()[0]
+                        # Crear rangos de noches mínimas
+                        bins = [0, 2, 7, 365]
+                        labels = ["1-2 noches", "3-7 noches", ">7 noches"]
+                        plot_data["min_nights_range"] = pd.cut(
+                            plot_data["minimum_nights"], bins=bins, labels=labels, include_lowest=True
                         )
-                        # Central circle for median
-                        fig.add_annotation(
-                            x=0.5,
-                            y=0.5,
-                            text=f"Mediana<br>{median_nights:.0f} noches",
-                            showarrow=False,
-                            font=dict(color="white", size=14),
-                            bgcolor="#767676",
-                            bordercolor="white",
-                            borderwidth=1
+                        # Calcular porcentajes
+                        percentages = plot_data["min_nights_range"].value_counts(normalize=True) * 100
+                        # Generar output textual
+                        text_output = (
+                            f"**Distribución de Noches Mínimas Requeridas**\n\n"
+                            f"- **Mediana**: {median_nights:.0f} noches\n"
+                            f"- **Moda**: {mode_nights:.0f} noches\n"
+                            f"- **Distribución**:\n"
+                            f"  - 1-2 noches: {percentages.get('1-2 noches', 0):.1f}%\n"
+                            f"  - 3-7 noches: {percentages.get('3-7 noches', 0):.1f}%\n"
+                            f"  - >7 noches: {percentages.get('>7 noches', 0):.1f}%"
                         )
-                        fig.update_layout(
-                            title=dict(text="Distribución de Noches Mínimas Requeridas", font=dict(color="white"), x=0.5),
-                            showlegend=True,
-                            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
-                            height=400,
-                            plot_bgcolor="rgba(0,0,0,0)",
-                            paper_bgcolor="rgba(0,0,0,0)",
-                            margin=dict(t=100, b=100, l=50, r=50)
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.markdown(text_output)
                     else:
-                        st.warning("No hay rangos de noches mínimas con suficientes datos (mínimo 5 puntos por rango).")
+                        st.warning("No hay datos válidos de noches mínimas después de filtrar valores extremos.")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de dona: {str(e)}")
+                    st.error(f"Error al generar el resumen: {str(e)}")
                     st.write("Estadísticas de 'minimum_nights':", plot_data["minimum_nights"].describe())
             else:
-                st.warning("No hay datos suficientes para mostrar el gráfico.")
+                st.warning("No hay datos suficientes para mostrar el resumen.")
         else:
             st.info("La columna 'minimum_nights' no está disponible.")
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)

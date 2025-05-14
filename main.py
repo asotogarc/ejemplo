@@ -1198,6 +1198,12 @@ with tabs[4]:
                         plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 20
                     elif max_score <= 10:
                         plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 10
+                    # Crear rangos de puntuación de limpieza
+                    bins = [0, 80, 90, 100]
+                    labels = ["0-80", "80-90", "90-100"]
+                    plot_data["cleanliness_range"] = pd.cut(
+                        plot_data["review_scores_cleanliness"], bins=bins, labels=labels, include_lowest=True
+                    )
                     # Filtrar tipos de habitación con suficientes datos (mínimo 5 puntos)
                     min_points = 5
                     category_counts = plot_data["room_type"].value_counts()
@@ -1205,37 +1211,64 @@ with tabs[4]:
                     plot_data_filtered = plot_data[plot_data["room_type"].isin(valid_types)]
                     
                     if len(plot_data_filtered) > 0 and len(valid_types) > 0:
-                        # Crear gráfico de violín
-                        fig = px.violin(
-                            plot_data_filtered,
-                            x="room_type",
-                            y="review_scores_cleanliness",
-                            labels={"room_type": "Tipo de Habitación", "review_scores_cleanliness": "Puntuación de Limpieza (0-100)"},
-                            title="Puntuación de Limpieza por Tipo de Habitación",
-                            color="room_type",
-                            color_discrete_sequence=["#FF5A5F", "#00A699", "#484848", "#767676"]
-                        )
-                        fig.update_traces(
-                            points=False,  # No mostrar puntos individuales
-                            line_width=1,
-                            scalemode="width"  # Violines de ancho uniforme
-                        )
+                        # Calcular proporciones por rango y tipo de habitación
+                        stacked_data = plot_data_filtered.groupby(["room_type", "cleanliness_range"]).size().unstack(fill_value=0)
+                        stacked_data = stacked_data.div(stacked_data.sum(axis=1), axis=0) * 100  # Convertir a porcentajes
+                        stacked_data = stacked_data.reset_index()
+                        # Calcular mediana por tipo de habitación
+                        median_data = plot_data_filtered.groupby("room_type")["review_scores_cleanliness"].median().reset_index()
+                        # Crear gráfico de barras apiladas
+                        fig = go.Figure()
+                        colors = ["#FF5A5F", "#00A699", "#484848"]
+                        for i, range_label in enumerate(labels):
+                            fig.add_trace(
+                                go.Bar(
+                                    x=stacked_data["room_type"],
+                                    y=stacked_data[range_label],
+                                    name=range_label,
+                                    marker_color=colors[i % len(colors)],
+                                    text=[f"{val:.1f}%" if val > 5 else "" for val in stacked_data[range_label]],
+                                    textposition="inside",
+                                    textfont=dict(color="white")
+                                )
+                            )
+                        # Añadir líneas para la mediana
+                        for _, row in median_data.iterrows():
+                            fig.add_shape(
+                                type="line",
+                                x0=row["room_type"], x1=row["room_type"],
+                                y0=row["review_scores_cleanliness"], y1=row["review_scores_cleanliness"],
+                                xref="x", yref="y",
+                                line=dict(color="#FFFFFF", width=3, dash="dash"),
+                                name="Mediana"
+                            )
+                            fig.add_annotation(
+                                x=row["room_type"],
+                                y=row["review_scores_cleanliness"],
+                                text=f"Mediana: {row['review_scores_cleanliness']:.1f}",
+                                showarrow=False,
+                                yshift=10,
+                                font=dict(color="white", size=12)
+                            )
+                        # Actualizar diseño
                         fig.update_layout(
+                            barmode="stack",
                             xaxis_title="Tipo de Habitación",
-                            yaxis_title="Puntuación de Limpieza (0-100)",
+                            yaxis_title="Porcentaje de Alojamientos (%)",
                             title=dict(text="Puntuación de Limpieza por Tipo de Habitación", font=dict(color="white"), x=0.5),
-                            yaxis=dict(range=[0, 100]),
-                            showlegend=False,
+                            yaxis=dict(range=[0, 100], title="Porcentaje de Alojamientos (%)"),
+                            showlegend=True,
                             height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
-                            margin=dict(t=100, b=50, l=50, r=50)
+                            margin=dict(t=100, b=50, l=50, r=50),
+                            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     else:
                         st.warning("No hay tipos de habitación con suficientes datos (mínimo 5 puntos por tipo).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de violín: {str(e)}")
+                    st.error(f"Error al generar el gráfico de barras apiladas: {str(e)}")
                     st.write("Estadísticas de 'review_scores_cleanliness':", plot_data["review_scores_cleanliness"].describe())
                     st.write("Tipos de habitación únicos:", plot_data["room_type"].unique())
             else:

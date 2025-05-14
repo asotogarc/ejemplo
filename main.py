@@ -1439,44 +1439,7 @@ with tabs[5]:
             st.info("La columna 'minimum_nights' no está disponible.")
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
 
-if "minimum_nights" in filtered_data.columns:
-    plot_data = filtered_data.dropna(subset=["minimum_nights"]).copy()
-    if len(plot_data) > 0:
-        try:
-            # Filtrar valores extremos (>365 noches)
-            plot_data = plot_data[plot_data["minimum_nights"] <= 365]
-            if len(plot_data) > 0:
-                # Calcular mediana y moda
-                median_nights = plot_data["minimum_nights"].median()
-                mode_nights = plot_data["minimum_nights"].mode()[0]
-                # Crear rangos de noches mínimas
-                bins = [0, 2, 7, 365]
-                labels = ["1-2 noches", "3-7 noches", ">7 noches"]
-                plot_data["min_nights_range"] = pd.cut(
-                    plot_data["minimum_nights"], bins=bins, labels=labels, include_lowest=True
-                )
-                # Calcular porcentajes
-                percentages = plot_data["min_nights_range"].value_counts(normalize=True) * 100
-                # Generar output textual
-                text_output = (
-                    f"**Distribución de Noches Mínimas Requeridas**\n\n"
-                    f"- **Mediana**: {median_nights:.0f} noches\n"
-                    f"- **Moda**: {mode_nights:.0f} noches\n"
-                    f"- **Distribución**:\n"
-                    f"  - 1-2 noches: {percentages.get('1-2 noches', 0):.1f}%\n"
-                    f"  - 3-7 noches: {percentages.get('3-7 noches', 0):.1f}%\n"
-                    f"  - >7 noches: {percentages.get('>7 noches', 0):.1f}%"
-                )
-                st.markdown(text_output)
-            else:
-                st.warning("No hay datos válidos de noches mínimas después de filtrar valores extremos.")
-        except Exception as e:
-            st.error(f"Error al generar el resumen: {str(e)}")
-            st.write("Estadísticas de 'minimum_nights':", plot_data["minimum_nights"].describe())
-    else:
-        st.warning("No hay datos suficientes para mostrar el resumen.")
-else:
-    st.info("La columna 'minimum_nights' no está disponible.")
+
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
 
 if "last_scraped" in filtered_data.columns:

@@ -1198,77 +1198,97 @@ with tabs[4]:
                         plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 20
                     elif max_score <= 10:
                         plot_data["review_scores_cleanliness"] = plot_data["review_scores_cleanliness"] * 10
-                    # Crear rangos de puntuación de limpieza
-                    bins = [0, 80, 90, 100]
-                    labels = ["0-80", "80-90", "90-100"]
-                    plot_data["cleanliness_range"] = pd.cut(
-                        plot_data["review_scores_cleanliness"], bins=bins, labels=labels, include_lowest=True
+                    # Calcular mediana, conteo y porcentaje en rango alto (90-100)
+                    bins = [90, 100]
+                    plot_data["high_range"] = pd.cut(
+                        plot_data["review_scores_cleanliness"], bins=bins, labels=["90-100"], include_lowest=False
                     )
+                    petal_data = plot_data.groupby("room_type").agg(
+                        median_cleanliness=("review_scores_cleanliness", "median"),
+                        count=("review_scores_cleanliness", "count"),
+                        high_percentage=("high_range", lambda x: (x.count() / len(x) * 100) if len(x) > 0 else 0)
+                    ).reset_index()
                     # Filtrar tipos de habitación con suficientes datos (mínimo 5 puntos)
                     min_points = 5
-                    category_counts = plot_data["room_type"].value_counts()
-                    valid_types = category_counts[category_counts >= min_points].index.tolist()
-                    plot_data_filtered = plot_data[plot_data["room_type"].isin(valid_types)]
+                    petal_data = petal_data[petal_data["count"] >= min_points]
                     
-                    if len(plot_data_filtered) > 0 and len(valid_types) > 0:
-                        # Calcular proporciones por rango y tipo de habitación
-                        stacked_data = plot_data_filtered.groupby(["room_type", "cleanliness_range"]).size().unstack(fill_value=0)
-                        stacked_data = stacked_data.div(stacked_data.sum(axis=1), axis=0) * 100  # Convertir a porcentajes
-                        stacked_data = stacked_data.reset_index()
-                        # Calcular mediana por tipo de habitación
-                        median_data = plot_data_filtered.groupby("room_type")["review_scores_cleanliness"].median().reset_index()
-                        # Crear gráfico de barras apiladas
+                    if len(petal_data) > 0:
+                        # Normalizar tamaños de pétalos (ancho según conteo)
+                        max_count = petal_data["count"].max()
+                        petal_data["width"] = petal_data["count"] / max_count * 0.4  # Escala de ancho
+                        # Crear gráfico de pétalos
                         fig = go.Figure()
-                        colors = ["#FF5A5F", "#00A699", "#484848"]
-                        for i, range_label in enumerate(labels):
+                        colors = ["#FF5A5F", "#00A699", "#484848", "#767676"]
+                        n_types = len(petal_data)
+                        theta_step = 360 / n_types  # Ángulo entre pétalos
+                        for i, row in petal_data.iterrows():
+                            # Definir coordenadas del pétalo
+                            theta = [i * theta_step - row["width"] * 18, i * theta_step, i * theta_step + row["width"] * 18]
+                            r = [0, row["median_cleanliness"], 0]
+                            # Añadir pétalo
                             fig.add_trace(
-                                go.Bar(
-                                    x=stacked_data["room_type"],
-                                    y=stacked_data[range_label],
-                                    name=range_label,
-                                    marker_color=colors[i % len(colors)],
-                                    text=[f"{val:.1f}%" if val > 5 else "" for val in stacked_data[range_label]],
-                                    textposition="inside",
-                                    textfont=dict(color="white")
+                                go.Scatterpolar(
+                                    r=r,
+                                    theta=theta,
+                                    mode="lines+markers",
+                                    fill="toself",
+                                    fillcolor=colors[i % len(colors)],
+                                    line_color=colors[i % len(colors)],
+                                    line_width=1,
+                                    marker=dict(size=5, color="white"),
+                                    name=row["room_type"],
+                                    hoverinfo="text",
+                                    hovertext=f"{row['room_type']}: Mediana {row['median_cleanliness']:.1f}, "
+                                             f"{row['high_percentage']:.1f}% en 90-100, {int(row['count'])} alojamientos"
                                 )
                             )
-                        # Añadir líneas para la mediana
-                        for _, row in median_data.iterrows():
-                            fig.add_shape(
-                                type="line",
-                                x0=row["room_type"], x1=row["room_type"],
-                                y0=row["review_scores_cleanliness"], y1=row["review_scores_cleanliness"],
-                                xref="x", yref="y",
-                                line=dict(color="#FFFFFF", width=3, dash="dash"),
-                                name="Mediana"
-                            )
+                            # Añadir etiqueta en el pétalo
+                            label_theta = i * theta_step
+                            label_r = row["median_cleanliness"] * 0.6  # Posición intermedia
                             fig.add_annotation(
-                                x=row["room_type"],
-                                y=row["review_scores_cleanliness"],
-                                text=f"Mediana: {row['review_scores_cleanliness']:.1f}",
+                                x=label_r * np.cos(np.radians(label_theta)),
+                                y=label_r * np.sin(np.radians(label_theta)),
+                                xref="paper",
+                                yref="paper",
+                                text=f"{row['room_type']}<br>{row['median_cleanliness']:.1f}<br>{row['high_percentage']:.1f}%",
                                 showarrow=False,
-                                yshift=10,
-                                font=dict(color="white", size=12)
+                                font=dict(color="white", size=10),
+                                bgcolor=colors[i % len(colors)],
+                                bordercolor="white",
+                                borderwidth=1
                             )
                         # Actualizar diseño
                         fig.update_layout(
-                            barmode="stack",
-                            xaxis_title="Tipo de Habitación",
-                            yaxis_title="Porcentaje de Alojamientos (%)",
-                            title=dict(text="Puntuación de Limpieza por Tipo de Habitación", font=dict(color="white"), x=0.5),
-                            yaxis=dict(range=[0, 100], title="Porcentaje de Alojamientos (%)"),
+                            polar=dict(
+                                radialaxis=dict(
+                                    visible=True,
+                                    range=[0, 100],
+                                    tickvals=[0, 20, 40, 60, 80, 100],
+                                    ticktext=["0", "20", "40", "60", "80", "100"]
+                                ),
+                                angularaxis=dict(
+                                    rotation=90,
+                                    direction="clockwise",
+                                    showticklabels=False
+                                )
+                            ),
+                            title=dict(
+                                text="Puntuación de Limpieza por Tipo de Habitación",
+                                font=dict(color="white"),
+                                x=0.5
+                            ),
                             showlegend=True,
-                            height=500,
+                            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+                            height=600,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
-                            margin=dict(t=100, b=50, l=50, r=50),
-                            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+                            margin=dict(t=100, b=100, l=50, r=50)
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     else:
                         st.warning("No hay tipos de habitación con suficientes datos (mínimo 5 puntos por tipo).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de barras apiladas: {str(e)}")
+                    st.error(f"Error al generar el gráfico de pétalos: {str(e)}")
                     st.write("Estadísticas de 'review_scores_cleanliness':", plot_data["review_scores_cleanliness"].describe())
                     st.write("Tipos de habitación únicos:", plot_data["room_type"].unique())
             else:

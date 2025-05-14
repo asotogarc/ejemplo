@@ -1399,19 +1399,81 @@ with tabs[4]:
             st.info("La columna 'review_scores_checkin' no está disponible.")
 # Pestaña 6: Características temporales
 with tabs[5]:
-    if "minimum_nights" in filtered_data.columns:
-        fig = px.histogram(
-            filtered_data,
-            x="minimum_nights",
-            nbins=30,
-            labels={"minimum_nights": "Noches Mínimas"},
-            title="Distribución de Noches Mínimas Requeridas"
-        )
-        fig.update_layout(title=dict(text="Distribución de Noches Mínimas Requeridas", font=dict(color="white"), x=0.5))
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("La columna 'minimum_nights' no está disponible.")
-
+        if "minimum_nights" in filtered_data.columns:
+            plot_data = filtered_data.dropna(subset=["minimum_nights"]).copy()
+            if len(plot_data) > 0:
+                try:
+                    # Filtrar valores extremos (>365 noches)
+                    plot_data = plot_data[plot_data["minimum_nights"] <= 365]
+                    # Calcular mediana
+                    median_nights = plot_data["minimum_nights"].median()
+                    # Crear rangos de noches mínimas
+                    bins = [0, 2, 7, 365]
+                    labels = ["1-2 noches", "3-7 noches", ">7 noches"]
+                    plot_data["min_nights_range"] = pd.cut(
+                        plot_data["minimum_nights"], bins=bins, labels=labels, include_lowest=True
+                    )
+                    # Calcular proporciones y conteos
+                    min_nights_counts = plot_data["min_nights_range"].value_counts().sort_index()
+                    min_nights_data = pd.DataFrame({
+                        "Rango": min_nights_counts.index,
+                        "Conteo": min_nights_counts.values,
+                        "Porcentaje": (min_nights_counts / min_nights_counts.sum() * 100).values
+                    })
+                    # Filtrar rangos con suficientes datos (mínimo 5 puntos)
+                    min_points = 5
+                    min_nights_data = min_nights_data[min_nights_data["Conteo"] >= min_points]
+                    
+                    if len(min_nights_data) > 0:
+                        # Crear gráfico de dona
+                        fig = go.Figure()
+                        # Dona principal
+                        fig.add_trace(
+                            go.Pie(
+                                values=min_nights_data["Porcentaje"],
+                                labels=min_nights_data["Rango"],
+                                hole=0.5,
+                                marker_colors=["#FF5A5F", "#00A699", "#484848"],
+                                textinfo="percent+label",
+                                textposition="inside",
+                                textfont=dict(color="white", size=12),
+                                hovertemplate="%{label}: %{value:.1f}% (%{customdata} alojamientos)",
+                                customdata=min_nights_data["Conteo"]
+                            )
+                        )
+                        # Círculo central para mediana
+                        fig.add_annotation(
+                            x=0.5,
+                            y=0.5,
+                            text=f"Mediana<br>{median_nights:.0f} noches",
+                            showarrow=False,
+                            font=dict(color="white", size=14),
+                            bgcolor="#767676",
+                            bordercolor="white",
+                            borderwidth=1
+                        )
+                        fig.update_layout(
+                            title=dict(text="Distribución de Noches Mínimas Requeridas", font=dict(color="white"), x=0.5),
+                            showlegend=True,
+                            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+                            height=400,
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            margin=dict(t=100, b=100, l=50, r=50)
+                        )
+                        fig.update_traces(
+                            transitions=[dict(duration=500, easing="cubic-in-out")]
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("No hay rangos de noches mínimas con suficientes datos (mínimo 5 puntos por rango).")
+                except Exception as e:
+                    st.error(f"Error al generar el gráfico de dona: {str(e)}")
+                    st.write("Estadísticas de 'minimum_nights':", plot_data["minimum_nights"].describe())
+            else:
+                st.warning("No hay datos suficientes para mostrar el gráfico.")
+        else:
+            st.info("La columna 'minimum_nights' no está disponible.")
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
 
 if "maximum_nights" in filtered_data.columns:

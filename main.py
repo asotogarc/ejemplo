@@ -1439,41 +1439,41 @@ with tabs[5]:
             st.info("La columna 'minimum_nights' no está disponible.")
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
 
-if "maximum_nights" in filtered_data.columns:
-    plot_data = filtered_data.dropna(subset=["maximum_nights"]).copy()
-    if len(plot_data) > 0:
-        try:
-            # Tratar valores extremos (>1125 como "sin límite")
-            plot_data["maximum_nights"] = plot_data["maximum_nights"].clip(upper=1125)
-            # Calcular mediana y moda
-            median_nights = plot_data["maximum_nights"].median()
-            mode_nights = plot_data["maximum_nights"].mode()[0]
-            # Crear rangos de noches máximas
-            bins = [0, 30, 365, 1125]
-            labels = ["≤30 noches", "31-365 noches", ">365 noches"]
-            plot_data["max_nights_range"] = pd.cut(
-                plot_data["maximum_nights"], bins=bins, labels=labels, include_lowest=True
-            )
-            # Calcular porcentajes
-            percentages = plot_data["max_nights_range"].value_counts(normalize=True) * 100
-            # Generar output textual
-            text_output = (
-                f"**Distribución de Noches Máximas Permitidas**\n\n"
-                f"- **Mediana**: {median_nights:.0f} noches\n"
-                f"- **Moda**: {mode_nights:.0f} noches\n"
-                f"- **Distribución**:\n"
-                f"  - ≤30 noches: {percentages.get('≤30 noches', 0):.1f}%\n"
-                f"  - 31-365 noches: {percentages.get('31-365 noches', 0):.1f}%\n"
-                f"  - >365 noches: {percentages.get('>365 noches', 0):.1f}%"
-            )
-            st.markdown(text_output)
-        except Exception as e:
-            st.error(f"Error al generar el resumen: {str(e)}")
-            st.write("Estadísticas de 'maximum_nights':", plot_data["maximum_nights"].describe())
-    else:
-        st.warning("No hay datos suficientes para mostrar el resumen.")
-else:
-    st.info("La columna 'maximum_nights' no está disponible.")
+        if "maximum_nights" in filtered_data.columns:
+            plot_data = filtered_data.dropna(subset=["maximum_nights"]).copy()
+            if len(plot_data) > 0:
+                try:
+                    # Tratar valores extremos (>1125 como "sin límite")
+                    plot_data["maximum_nights"] = plot_data["maximum_nights"].clip(upper=1125)
+                    # Calcular mediana y moda
+                    median_nights = plot_data["maximum_nights"].median()
+                    mode_nights = plot_data["maximum_nights"].mode()[0]
+                    # Crear rangos de noches máximas
+                    bins = [0, 30, 365, 1125]
+                    labels = ["≤30 noches", "31-365 noches", ">365 noches"]
+                    plot_data["max_nights_range"] = pd.cut(
+                        plot_data["maximum_nights"], bins=bins, labels=labels, include_lowest=True
+                    )
+                    # Calcular porcentajes
+                    percentages = plot_data["max_nights_range"].value_counts(normalize=True) * 100
+                    # Generar output textual
+                    text_output = (
+                        f"**Distribución de Noches Máximas Permitidas**\n\n"
+                        f"- **Mediana**: {median_nights:.0f} noches\n"
+                        f"- **Moda**: {mode_nights:.0f} noches\n"
+                        f"- **Distribución**:\n"
+                        f"  - ≤30 noches: {percentages.get('≤30 noches', 0):.1f}%\n"
+                        f"  - 31-365 noches: {percentages.get('31-365 noches', 0):.1f}%\n"
+                        f"  - >365 noches: {percentages.get('>365 noches', 0):.1f}%"
+                    )
+                    st.markdown(text_output)
+                except Exception as e:
+                    st.error(f"Error al generar el resumen: {str(e)}")
+                    st.write("Estadísticas de 'maximum_nights':", plot_data["maximum_nights"].describe())
+            else:
+                st.warning("No hay datos suficientes para mostrar el resumen.")
+        else:
+            st.info("La columna 'maximum_nights' no está disponible.")
 st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
 
 if "last_scraped" in filtered_data.columns:

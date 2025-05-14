@@ -300,33 +300,7 @@ with tabs[1]:
         </div>
         """, unsafe_allow_html=True)
 
-    with col2:
-        st.markdown('<div class="section-header">Precios por Vecindario</div>', unsafe_allow_html=True)
-        price_by_neighbourhood = filtered_data.groupby("neighbourhood_cleansed")["price"].median().sort_values(ascending=False).head(10)
-        fig = px.bar(
-            x=price_by_neighbourhood.values,
-            y=price_by_neighbourhood.index,
-            orientation="h",
-            labels={"x": "Precio Mediano (€)", "y": "Vecindario"},
-            color=price_by_neighbourhood.values,
-            olor_continuous_scale=px.colors.sequential.Plasma,
-            title=""
-        )
-        fig.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown('<div class="section-header">Comparación por Tipo de Habitación</div>', unsafe_allow_html=True)
-        fig = px.box(
-            filtered_data,
-            x="room_type",
-            y="price",
-            color="room_type",
-            labels={"price": "Precio (€)", "room_type": "Tipo de Habitación"},
-            title="",
-            category_orders={"room_type": sorted(filtered_data["room_type"].unique())},
-            points="outliers"
-        )
-        fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
+
 
 with tabs[2]:
     col1, col2 = st.columns(2)

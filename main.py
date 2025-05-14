@@ -1474,6 +1474,30 @@ with tabs[5]:
         else:
             st.info("La columna 'maximum_nights' no está disponible.")
 
+
+        if "last_scraped" in filtered_data.columns:
+            plot_data = filtered_data.dropna(subset=["last_scraped"]).copy()
+            if len(plot_data) > 0:
+                try:
+                    plot_data["last_scraped"] = pd.to_datetime(plot_data["last_scraped"], errors="coerce")
+                    date_counts = plot_data["last_scraped"].value_counts()
+                    most_common_date = date_counts.index[0].strftime("%Y-%m-%d")
+                    most_common_percentage = (date_counts.iloc[0] / len(plot_data) * 100)
+                    unique_dates = len(date_counts)
+                    text_output = (
+                        f"**Frecuencia de Última Fecha de Recopilación**\n\n"
+                        f"- **Fecha más común**: {most_common_date} ({most_common_percentage:.1f}% de los alojamientos)\n"
+                        f"- **Fechas únicas**: {unique_dates}"
+                    )
+                    st.markdown(text_output)
+                except Exception as e:
+                    st.error(f"Error al generar el resumen: {str(e)}")
+                    st.write("Valores únicos de 'last_scraped':", plot_data["last_scraped"].unique())
+            else:
+                st.warning("No hay datos suficientes para mostrar el resumen.")
+        else:
+            st.info("La columna 'last_scraped' no está disponible.")
+
 # Pestaña 7: Características de Usuarios
 # Pestaña 7: Características de Usuarios
 with tabs[6]:

@@ -444,7 +444,7 @@ with tabs[1]:
             st.info("Faltan las columnas 'availability_365' o 'price'.")
 
     with col2:
-        st.markdown('<div class="section-header">Precios Medios por Vecindario</div>', unsafe_allow_html>True)
+        st.markdown('<div class="section-header">Precios Medios por Vecindario</div>', unsafe_allow_html=True)
         if "neighbourhood_cleansed" in filtered_data.columns and "price" in filtered_data.columns:
             price_by_neighbourhood = filtered_data.groupby("neighbourhood_cleansed")["price"].median().sort_values(ascending=False).head(10)
             fig = px.bar(

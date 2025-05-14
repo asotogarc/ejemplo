@@ -1504,64 +1504,100 @@ with tabs[6]:
     st.markdown('<div class="subheader">Características de Usuarios</div>', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 1])
 
-    # Columna 1: Resumen General y Clusters
+    # Columna 1: Gráficos para Resumen General y Clusters
     with col1:
-        # Resumen General de Reseñas
-        st.markdown("""
-        <div class="info-box">
-        <h3>Resumen General de Reseñas</h3>
-        <ul>
-            <li><b>Total de Reseñas:</b> 50,000</li>
-            <li><b>Total de Usuarios:</b> 49,812</li>
-            <li><b>Período de Análisis:</b> 04/01/2011 - 25/12/2024</li>
-            <li><b>Promedio de Sentimiento:</b> 0.775</li>
-            <li><b>Sentimiento Mínimo:</b> -0.9835</li>
-            <li><b>Sentimiento Máximo:</b> 0.9986</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        # Gráfico 1: Resumen General de Reseñas
+        resumen_data = pd.DataFrame({
+            "Métrica": ["Total de Reseñas", "Total de Usuarios", "Promedio de Sentimiento", "Sentimiento Mínimo", "Sentimiento Máximo"],
+            "Valor": [50000, 49812, 0.775, -0.9835, 0.9986]
+        })
+        fig_resumen = px.bar(
+            resumen_data,
+            x="Métrica",
+            y="Valor",
+            title="Resumen General de Reseñas",
+            color="Métrica",
+            color_discrete_sequence=px.colors.sequential.Viridis,
+            text=resumen_data["Valor"].round(4)
+        )
+        fig_resumen.update_traces(textposition="auto")
+        fig_resumen.update_layout(
+            xaxis_title="Métrica",
+            yaxis_title="Valor",
+            showlegend=False,
+            title_x=0.5
+        )
+        st.plotly_chart(fig_resumen, use_container_width=True)
 
-        # Clusters de Reseñas
-        st.markdown("""
-        <div class="info-box">
-        <h3>Cluster 0</h3>
-        <ul>
-            <li><b>Número de Reseñas:</b> 7,130 (14.26%)</li>
-            <li><b>Sentimiento Promedio:</b> 0.853</li>
-            <li><b>Palabras Clave:</b> great, location, great location, stay, place, apartment, host, great place, clean, recommend</li>
-        </ul>
-        <h3>Cluster 1</h3>
-        <ul>
-            <li><b>Número de Reseñas:</b> 3,837 (7.674%)</li>
-            <li><b>Sentimiento Promedio:</b> 0.720</li>
-            <li><b>Palabras Clave:</b> good, location, good location, apartment, place, stay, clean, nice, host, good place</li>
-        </ul>
-        <h3>Cluster 2</h3>
-        <ul>
-            <li><b>Número de Reseñas:</b> 39,033 (78.066%)</li>
-            <li><b>Sentimiento Promedio:</b> 0.766</li>
-            <li><b>Palabras Clave:</b> apartment, stay, place, nice, location, clean, recommend, great, perfect, host</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        # Gráfico 2: Clusters de Reseñas
+        clusters_data = pd.DataFrame({
+            "Cluster": ["Cluster 0", "Cluster 1", "Cluster 2"],
+            "Número de Reseñas": [7130, 3837, 39033],
+            "Sentimiento Promedio": [0.853, 0.720, 0.766]
+        })
+        fig_clusters = go.Figure()
+        fig_clusters.add_trace(
+            go.Bar(
+                x=clusters_data["Cluster"],
+                y=clusters_data["Número de Reseñas"],
+                name="Número de Reseñas",
+                marker_color="#FF5A5F",
+                text=clusters_data["Número de Reseñas"],
+                textposition="auto"
+            )
+        )
+        fig_clusters.add_trace(
+            go.Scatter(
+                x=clusters_data["Cluster"],
+                y=clusters_data["Sentimiento Promedio"],
+                name="Sentimiento Promedio",
+                yaxis="y2",
+                line=dict(color="#00A699", width=3),
+                mode="lines+markers",
+                marker=dict(size=8)
+            )
+        )
+        fig_clusters.update_layout(
+            title="Clusters de Reseñas",
+            xaxis_title="Cluster",
+            yaxis_title="Número de Reseñas",
+            yaxis2=dict(
+                title="Sentimiento Promedio",
+                overlaying="y",
+                side="right"
+            ),
+            height=500,
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig_clusters, use_container_width=True)
 
-    # Columna 2: Temas y Gráficos
+    # Columna 2: Gráfico para Temas y Gráficos Originales
     with col2:
-        # Temas Identificados
-        st.markdown("""
-        <div class="info-box">
-        <h3>Temas Identificados</h3>
-        <ul>
-            <li><b>Tema 1:</b> Check-in y asistencia (check, help, give, time, arrive, leave, arrival, question, early)</li>
-            <li><b>Tema 2:</b> Características del alojamiento (room, bed, bathroom, small, kitchen, night, work, shower, bedroom)</li>
-            <li><b>Tema 3:</b> Experiencia general (accommodation, pleasant, welcome, locate, description, foot, functional, photo, available, practical)</li>
-            <li><b>Tema 4:</b> Valoración positiva (apartment, great, stay, location, place, good, clean, recommend, nice, host)</li>
-            <li><b>Tema 5:</b> Atención y espacio (house, attentive, hostel, attention, department, floor, position, doubt, meter, wide)</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        # Gráfico 3: Temas Identificados
+        temas_data = pd.DataFrame({
+            "Tema": ["Check-in y asistencia", "Características del alojamiento", "Experiencia general", "Valoración positiva", "Atención y espacio"],
+            "Importancia": [5, 8, 6, 10, 4]  # Valores ficticios
+        })
+        fig_temas = px.bar(
+            temas_data,
+            y="Tema",
+            x="Importancia",
+            title="Temas Identificados",
+            orientation="h",
+            color="Tema",
+            color_discrete_sequence=px.colors.sequential.Inferno,
+            text=temas_data["Importancia"]
+        )
+        fig_temas.update_traces(textposition="auto")
+        fig_temas.update_layout(
+            xaxis_title="Importancia (Ficticia)",
+            yaxis_title="Tema",
+            showlegend=False,
+            title_x=0.5
+        )
+        st.plotly_chart(fig_temas, use_container_width=True)
 
-        # Gráfico 1: Actividad y Sentimiento por Día de la Semana
+        # Gráfico 4: Actividad y Sentimiento por Día de la Semana
         review_data = pd.DataFrame({
             "Día": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
             "review_id": [8257, 6485, 6278, 6228, 6607, 6539, 9606],
@@ -1596,22 +1632,13 @@ with tabs[6]:
             yaxis_title="Número de Reseñas",
             yaxis2_title="Sentimiento Promedio",
             height=500,
-            hovermode="x unified"  # Mejora la interactividad
+            hovermode="x unified"
         )
         fig.update_yaxes(title_text="Número de Reseñas", secondary_y=False)
         fig.update_yaxes(title_text="Sentimiento Promedio", secondary_y=True)
         st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown("""
-        <div class="info-box">
-        <b>Descripción:</b> Gráfico combinado que muestra la actividad y el sentimiento promedio de las reseñas por día de la semana. Las barras indican el número de reseñas, mientras que la línea muestra el sentimiento promedio (calculado con VADER).<br>
-        <b>Información Adicional:</b><br>
-        - Período de análisis: Semanal (por día)<br>
-        - Método de análisis de sentimiento: VADER
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Gráfico 2: Evolución del Sentimiento Promedio por Mes
+        # Gráfico 5: Evolución del Sentimiento Promedio por Mes
         sentiment_data = pd.DataFrame({
             "year_month": [
                 "2011-01", "2011-04", "2011-05", "2011-06", "2011-07", "2011-08", "2011-09", "2011-11", "2011-12",
@@ -1674,19 +1701,9 @@ with tabs[6]:
                 tickformat="%Y-%m",
                 dtick="M12",  # Mostrar etiquetas cada 12 meses
                 tickangle=45
-            ),
-            hovermode="x unified"  # Mejora la interactividad
+            )
         )
         st.plotly_chart(fig, use_container_width=True)
-
-        st.markdown("""
-        <div class="info-box">
-        <b>Descripción:</b> Gráfico de líneas que muestra la evolución del sentimiento promedio (calculado con VADER) de las reseñas a lo largo del tiempo, agrupado por mes.<br>
-        <b>Información Adicional:</b><br>
-        - Período de análisis: Mensual (04/01/2011 - 25/12/2024)<br>
-        - Método de análisis de sentimiento: VADER
-        </div>
-        """, unsafe_allow_html=True)
 
 # Pie de página
 st.markdown("---")

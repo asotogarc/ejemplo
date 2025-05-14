@@ -492,7 +492,7 @@ with tabs[1]:
         
         
 
-        if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
+         if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
             plot_data = filtered_data.dropna(subset=["room_type", "price"])
             if len(plot_data) > 0:
                 min_points = 1

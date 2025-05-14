@@ -422,24 +422,53 @@ with tabs[1]:
             st.info("La columna 'price' no está disponible.")
         
         
-
         if "availability_365" in filtered_data.columns and "price" in filtered_data.columns:
-            plot_data = filtered_data.dropna(subset=["availability_365", "price"]).sample(min(1000, len(filtered_data)))
+            plot_data = filtered_data.dropna(subset=["availability_365", "price"]).copy()
             if len(plot_data) > 0:
-                fig = px.scatter(
-                    plot_data,
-                    x="availability_365",
-                    y="price",
-                    labels={"availability_365": "Disponibilidad (días/año)", "price": "Precio (€)"},
-                    title="Relación entre Precio y Disponibilidad Anual"
-                )
-                fig.update_layout(title=dict(text="Relación entre Precio y Disponibilidad Anual", font=dict(color="white"), x=0.5))
-                st.plotly_chart(fig, use_container_width=True)
+                # Crear rangos de disponibilidad (intervalos de 50 días)
+                bins = [0, 50, 100, 150, 200, 250, 300, 365]
+                labels = ['0-50', '51-100', '101-150', '151-200', '201-250', '251-300', '301-365']
+                plot_data['availability_range'] = pd.cut(plot_data['availability_365'], bins=bins, labels=labels, include_lowest=True)
+                
+                # Filtrar rangos con suficientes datos (mínimo 5 puntos por rango)
+                min_points = 5
+                category_counts = plot_data['availability_range'].value_counts()
+                valid_categories = category_counts[category_counts >= min_points].index.tolist()
+                plot_data_filtered = plot_data[plot_data['availability_range'].isin(valid_categories)]
+                
+                if len(plot_data_filtered) > 0 and len(valid_categories) > 0:
+                    try:
+                        # Crear gráfico de caja
+                        fig = px.box(
+                            plot_data_filtered,
+                            x='availability_range',
+                            y='price',
+                            labels={'availability_range': 'Disponibilidad Anual (días)', 'price': 'Precio (€)'},
+                            title='Distribución de Precios por Rango de Disponibilidad Anual',
+                            category_orders={'availability_range': labels}  # Mantener el orden de los rangos
+                        )
+                        fig.update_layout(
+                            xaxis_title='Disponibilidad Anual (días)',
+                            yaxis_title='Precio (€)',
+                            title=dict(text='Distribución de Precios por Rango de Disponibilidad Anual', font=dict(color='white'), x=0.5),
+                            showlegend=False
+                        )
+                        # Limitar el eje Y para evitar valores extremos (opcional)
+                        fig.update_yaxes(range=[0, plot_data_filtered['price'].quantile(0.95)])
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error al generar el gráfico de caja: {e}")
+                        st.write("Valores únicos en 'availability_range':", plot_data_filtered['availability_range'].unique())
+                else:
+                    st.warning("No hay rangos de disponibilidad con suficientes datos para mostrar el gráfico.")
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'availability_365' o 'price'.")
 
+
+
+    
     with col2:
         if "neighbourhood_cleansed" in filtered_data.columns and "price" in filtered_data.columns:
             price_by_neighbourhood = filtered_data.groupby("neighbourhood_cleansed")["price"].median().sort_values(ascending=False).head(10)

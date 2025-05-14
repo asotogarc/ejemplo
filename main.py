@@ -892,10 +892,15 @@ with tabs[3]:
             plot_data = filtered_data.dropna(subset=["host_acceptance_rate", "price"]).copy()
             if len(plot_data) > 0:
                 try:
+                    # Convertir tasa de aceptación a porcentaje (si no está en 0-100)
+                    if plot_data["host_acceptance_rate"].max() <= 1:
+                        plot_data["host_acceptance_rate"] = plot_data["host_acceptance_rate"] * 100
                     # Crear rangos de tasa de aceptación
-                    bins = [0, 0.5, 0.8, 1.0]
+                    bins = [0, 50, 80, 100]
                     labels = ["0-50%", "50-80%", "80-100%"]
-                    plot_data["acceptance_range"] = pd.cut(plot_data["host_acceptance_rate"], bins=bins, labels=labels, include_lowest=True)
+                    plot_data["acceptance_range"] = pd.cut(
+                        plot_data["host_acceptance_rate"], bins=bins, labels=labels, include_lowest=True
+                    )
                     # Filtrar rangos con suficientes datos (mínimo 5 puntos)
                     min_points = 5
                     category_counts = plot_data["acceptance_range"].value_counts()
@@ -903,39 +908,58 @@ with tabs[3]:
                     plot_data_filtered = plot_data[plot_data["acceptance_range"].isin(valid_ranges)]
                     
                     if len(plot_data_filtered) > 0 and len(valid_ranges) > 0:
-                        # Crear gráfico de caja
-                        fig = px.box(
-                            plot_data_filtered,
-                            x="acceptance_range",
-                            y="price",
-                            labels={"acceptance_range": "Tasa de Aceptación", "price": "Precio (€)"},
-                            title="Distribución de Precios por Tasa de Aceptación",
-                            color="acceptance_range",
-                            color_discrete_sequence=["#FF5A5F", "#00A699", "#484848"]
-                        )
+                        # Calcular mediana de precios y conteo por rango
+                        bubble_data = plot_data_filtered.groupby("acceptance_range").agg(
+                            median_price=("price", "median"),
+                            count=("price", "count")
+                        ).reset_index()
+                        # Normalizar tamaños de burbujas
+                        max_size = 50
+                        min_size = 10
+                        bubble_data["size"] = min_size + (bubble_data["count"] / bubble_data["count"].max()) * (max_size - min_size)
+                        # Crear gráfico de burbujas
+                        fig = go.Figure()
+                        for i, row in bubble_data.iterrows():
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=[row["acceptance_range"]],
+                                    y=[row["median_price"]],
+                                    mode="markers",
+                                    marker=dict(
+                                        size=row["size"],
+                                        color=["#FF5A5F", "#00A699", "#484848"][i % 3],
+                                        opacity=0.8,
+                                        line=dict(width=1, color="#FFFFFF")
+                                    ),
+                                    text=f"{row['acceptance_range']}: {int(row['count'])} alojamientos, Precio mediano: €{row['median_price']:.0f}",
+                                    hoverinfo="text",
+                                    name=row["acceptance_range"]
+                                )
+                            )
                         # Actualizar diseño
                         fig.update_layout(
                             xaxis_title="Tasa de Aceptación",
-                            yaxis_title="Precio (€)",
-                            title=dict(text="Distribución de Precios por Tasa de Aceptación", font=dict(color="white"), x=0.5),
-                            yaxis=dict(range=[0, plot_data_filtered["price"].quantile(0.95)]),
-                            showlegend=False,
+                            yaxis_title="Precio Mediano (€)",
+                            title=dict(text="Relación entre Tasa de Aceptación y Precio", font=dict(color="white"), x=0.5),
+                            yaxis=dict(range=[0, bubble_data["median_price"].quantile(0.95) * 1.2]),
+                            showlegend=True,
                             height=500,
                             plot_bgcolor="rgba(0,0,0,0)",
                             paper_bgcolor="rgba(0,0,0,0)",
-                            margin=dict(t=100, b=50, l=50, r=50)
+                            margin=dict(t=100, b=50, l=50, r=50),
+                            xaxis=dict(tickangle=0)
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     else:
-                        st.warning("No hay rangos de tasa de aceptación con suficientes datos para mostrar el gráfico.")
+                        st.warning("No hay rangos de tasa de aceptación con suficientes datos (mínimo 5 puntos por rango).")
                 except Exception as e:
-                    st.error(f"Error al generar el gráfico de caja: {e}")
-                    st.write("Valores únicos en 'host_acceptance_rate':", plot_data["host_acceptance_rate"].describe())
+                    st.error(f"Error al generar el gráfico de burbujas: {str(e)}")
+                    st.write("Estadísticas de 'host_acceptance_rate':", plot_data["host_acceptance_rate"].describe())
+                    st.write("Estadísticas de 'price':", plot_data["price"].describe())
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
             st.info("Faltan las columnas 'host_acceptance_rate' o 'price'.")
-
         
 
         if "host_listings_count" in filtered_data.columns and "price" in filtered_data.columns:

@@ -1573,7 +1573,9 @@ with tabs[6]:
                 x=review_data["Día"],
                 y=review_data["review_id"],
                 name="Número de Reseñas",
-                marker_color="#FF5A5F"
+                marker_color="#FF5A5F",
+                text=review_data["review_id"],
+                textposition="auto"
             ),
             secondary_y=False
         )
@@ -1582,7 +1584,9 @@ with tabs[6]:
                 x=review_data["Día"],
                 y=review_data["vader_compound"],
                 name="Sentimiento Promedio",
-                line=dict(color="#00A699", width=3)
+                line=dict(color="#00A699", width=3),
+                mode="lines+markers",
+                marker=dict(size=8)
             ),
             secondary_y=True
         )
@@ -1591,7 +1595,8 @@ with tabs[6]:
             xaxis_title="Día de la Semana",
             yaxis_title="Número de Reseñas",
             yaxis2_title="Sentimiento Promedio",
-            height=500
+            height=500,
+            hovermode="x unified"  # Mejora la interactividad
         )
         fig.update_yaxes(title_text="Número de Reseñas", secondary_y=False)
         fig.update_yaxes(title_text="Sentimiento Promedio", secondary_y=True)
@@ -1669,7 +1674,8 @@ with tabs[6]:
                 tickformat="%Y-%m",
                 dtick="M12",  # Mostrar etiquetas cada 12 meses
                 tickangle=45
-            )
+            ),
+            hovermode="x unified"  # Mejora la interactividad
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -1681,6 +1687,7 @@ with tabs[6]:
         - Método de análisis de sentimiento: VADER
         </div>
         """, unsafe_allow_html=True)
+
 # Pie de página
 st.markdown("---")
 st.markdown("TFG - Análisis de Precios y Reseñas en Airbnb | Ángel Soto García")

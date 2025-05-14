@@ -604,23 +604,45 @@ with tabs[2]:
             st.info("Faltan las columnas 'bedrooms' o 'price'.")
 
     with col2:
+                
         if "accommodates" in filtered_data.columns and "price" in filtered_data.columns:
-            plot_data = filtered_data.dropna(subset=["accommodates", "price"]).sample(min(1000, len(filtered_data)))
+            plot_data = filtered_data.dropna(subset=["accommodates", "price"]).copy()
             if len(plot_data) > 0:
-                fig = px.scatter(
-                    plot_data,
-                    x="accommodates",
-                    y="price",
-                    labels={"accommodates": "Capacidad", "price": "Precio (€)"},
-                    title="Relación entre Precio y Capacidad de Alojamiento"
-                )
-                fig.update_layout(title=dict(text="Relación entre Precio y Capacidad de Alojamiento", font=dict(color="white"), x=0.5))
-                st.plotly_chart(fig, use_container_width=True)
+                # Filtrar capacidades con suficientes datos (mínimo 5 puntos)
+                min_points = 5
+                category_counts = plot_data["accommodates"].value_counts()
+                valid_categories = category_counts[category_counts >= min_points].index.tolist()
+                plot_data_filtered = plot_data[plot_data["accommodates"].isin(valid_categories)]
+                
+                if len(plot_data_filtered) > 0 and len(valid_categories) > 0:
+                    try:
+                        # Crear gráfico de caja
+                        fig = px.box(
+                            plot_data_filtered,
+                            x="accommodates",
+                            y="price",
+                            labels={"accommodates": "Capacidad (Personas)", "price": "Precio (€)"},
+                            title="Distribución de Precios por Capacidad de Alojamiento",
+                            category_orders={"accommodates": sorted(valid_categories)}  # Ordenar capacidades
+                        )
+                        fig.update_layout(
+                            xaxis_title="Capacidad (Personas)",
+                            yaxis_title="Precio (€)",
+                            title=dict(text="Distribución de Precios por Capacidad de Alojamiento", font=dict(color="white"), x=0.5),
+                            showlegend=False
+                        )
+                        # Limitar el eje Y para evitar valores extremos
+                        fig.update_yaxes(range=[0, plot_data_filtered["price"].quantile(0.95)])
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error al generar el gráfico de caja: {e}")
+                        st.write("Valores únicos en 'accommodates':", plot_data_filtered["accommodates"].unique())
+                else:
+                    st.warning("No hay valores de capacidad con suficientes datos para mostrar el gráfico.")
             else:
                 st.warning("No hay datos suficientes para mostrar el gráfico.")
         else:
-            st.info("Faltan las columnas 'accommodates' o 'price'.")
-        
+            st.info("Faltan las columnas 'accommodates' o 'price'.")        
         
         
         if "beds" in filtered_data.columns:

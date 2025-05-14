@@ -389,7 +389,6 @@ with tabs[0]:
 with tabs[1]:
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.markdown('<div class="section-header">Distribución de Precios de Alojamientos</div>', unsafe_allow_html=True)
         if "price" in filtered_data.columns:
             fig = make_subplots(
                 rows=2, cols=1,
@@ -422,7 +421,6 @@ with tabs[1]:
         else:
             st.info("La columna 'price' no está disponible.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
         st.markdown('<div class="section-header">Relación entre Precio y Disponibilidad Anual</div>', unsafe_allow_html=True)
         if "availability_365" in filtered_data.columns and "price" in filtered_data.columns:
@@ -443,7 +441,6 @@ with tabs[1]:
             st.info("Faltan las columnas 'availability_365' o 'price'.")
 
     with col2:
-        st.markdown('<div class="section-header">Precios Medios por Vecindario</div>', unsafe_allow_html=True)
         if "neighbourhood_cleansed" in filtered_data.columns and "price" in filtered_data.columns:
             price_by_neighbourhood = filtered_data.groupby("neighbourhood_cleansed")["price"].median().sort_values(ascending=False).head(10)
             fig = px.bar(
@@ -463,7 +460,7 @@ with tabs[1]:
         else:
             st.info("Faltan las columnas 'neighbourhood_cleansed' o 'price'.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        
         
         st.markdown('<div class="section-header">Distribución de Precios por Tipo de Habitación</div>', unsafe_allow_html=True)
         if "room_type" in filtered_data.columns and "price" in filtered_data.columns:
@@ -501,7 +498,7 @@ with tabs[1]:
         else:
             st.info("Faltan las columnas 'room_type' o 'price'.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        
         
         st.markdown('<div class="section-header">Importancia de Características</div>', unsafe_allow_html=True)
         st.markdown("""
@@ -564,7 +561,6 @@ with tabs[2]:
         else:
             st.info("La columna 'property_type' no está disponible.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
         
         st.markdown('<div class="section-header">Amenidades Más Frecuentes en Alojamientos</div>', unsafe_allow_html=True)
         if "amenities" in filtered_data.columns and len(common_amenities) > 0:
@@ -586,7 +582,7 @@ with tabs[2]:
         else:
             st.info("No hay datos de amenidades disponibles.")
         
-        st.markdown('<div class="divider-horizontal"></div>', unsafe_allow_html=True)
+        
         
         st.markdown('<div class="section-header">Distribución de Precios según Número de Habitaciones</div>', unsafe_allow_html=True)
         if "bedrooms" in filtered_data.columns and "price" in filtered_data.columns:
